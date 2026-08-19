@@ -1,0 +1,47 @@
+[package]
+name = "light-scrap-vidz"
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+name = "light_scrap_vidz_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "light-scrap-vidz"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-clipboard-manager = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+regex = "1"
+uuid = { version = "1", features = ["v4"] }
+anyhow = "1"
+
+[dev-dependencies]
+# unit tests via cargo test
+tempfile = "3"
+# `tauri::test::mock_app()` : permet d'exécuter les commandes qui prennent un `State`
+# sans lancer de fenêtre.
+tauri = { version = "2", features = ["test"] }
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1
+panic = "abort"
+strip = true

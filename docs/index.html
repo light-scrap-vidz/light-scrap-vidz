@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <title>LightScrapVidz — Download videos, anywhere</title>
+  <meta name="description" content="Download videos from YouTube, TikTok, Instagram, Facebook and more. One command install for macOS and Linux." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16161a;
+      --border: #2a2a30;
+      --accent: #7c6fff;
+      --accent-dim: #5b51cc;
+      --text: #e8e8f0;
+      --muted: #888899;
+      --green: #4ade80;
+      --code-bg: #1a1a22;
+      --radius: 10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ── */
+    header, main, footer {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    header {
+      padding-top: 72px;
+      padding-bottom: 64px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(124,111,255,.12);
+      border: 1px solid rgba(124,111,255,.25);
+      border-radius: 100px;
+      padding: 4px 12px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .tagline {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 48px;
+    }
+
+    /* ── Features ── */
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 64px;
+    }
+
+    .feature-tag {
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+    }
+
+    /* ── Install card ── */
+    .install-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 48px;
+    }
+
+    .install-card-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .install-card-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .install-card-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .command-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 24px;
+      background: var(--code-bg);
+    }
+
+    .command-block code {
+      flex: 1;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 13.5px;
+      color: var(--green);
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      background: rgba(124,111,255,.15);
+      border: 1px solid rgba(124,111,255,.3);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover { background: rgba(124,111,255,.25); }
+    .copy-btn.copied { color: var(--green); border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.1); }
+
+    .install-note {
+      padding: 14px 24px;
+      font-size: 12.5px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    .install-note strong { color: var(--text); }
+
+    /* ── Sections ── */
+    section { margin-bottom: 56px; }
+
+    section h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 520px) { .cmd-grid { grid-template-columns: 1fr; } }
+
+    .cmd-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .cmd-card-label {
+      padding: 12px 16px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .cmd-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 16px 14px;
+      background: var(--code-bg);
+    }
+
+    .cmd-line code {
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: var(--green);
+      word-break: break-all;
+    }
+
+    .cmd-note {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 10px 16px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ── Requirements ── */
+    .req-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .req-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .req-list li::before {
+      content: "–";
+      color: var(--border);
+      flex-shrink: 0;
+    }
+
+    .req-list li strong { color: var(--text); }
+
+    /* ── Footer ── */
+    footer {
+      padding-top: 40px;
+      padding-bottom: 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .lang-toggle {
+      position: fixed; top: 18px; right: 18px; z-index: 50;
+      padding: 6px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font: 700 12px/1 inherit; letter-spacing: .04em;
+      cursor: pointer;
+    }
+    .lang-toggle:hover { color: var(--text); border-color: var(--accent); }
+    .badge-reco {
+      display: inline-block; padding: 3px 10px; margin-bottom: 10px;
+      border-radius: 999px; background: var(--accent); color: #fff;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .pill {
+      padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border);
+      color: var(--muted); font-size: 12px;
+    }
+    .alt-divider { margin: 24px 0 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+      /* ── Barre de navigation ── (structure commune aux six sites) */
+      .site-nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: color-mix(in srgb, var(--bg) 85%, transparent);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .site-nav-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 24px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        gap: 32px;
+      }
+
+      .site-nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text);
+      }
+      .site-nav-logo img { display: block; width: 28px; height: 28px; }
+
+      .site-nav-links {
+        display: flex;
+        gap: 24px;
+        margin-left: auto;
+        align-items: center;
+      }
+
+      .site-nav-links a {
+        color: var(--muted);
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .site-nav-links a:hover { color: var(--text); }
+
+      /* La bascule de langue rejoint la barre : elle flottait au-dessus du contenu. */
+      .site-nav .lang-toggle {
+        position: static;
+        margin: 0;
+      }
+
+      /* ── En-tête ── */
+      .site-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 96px 24px 72px;
+        text-align: center;
+      }
+
+      .site-hero-glow {
+        position: absolute;
+        top: -100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 700px;
+        height: 500px;
+        max-width: 100vw;
+        background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .site-hero-inner {
+        position: relative;
+        max-width: 700px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .site-hero-logo { width: 96px; height: 96px; }
+
+      .site-hero-title {
+        font-size: clamp(1.9rem, 5vw, 3rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 0;
+        color: var(--text);
+      }
+
+      .site-hero-sub {
+        color: var(--muted);
+        font-size: 1.1rem;
+        max-width: 520px;
+        margin: 0;
+      }
+
+      .site-hero-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .site-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.15s;
+      }
+      .site-btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
+
+      .site-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-weight: 500;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .site-btn-ghost:hover { border-color: var(--accent); background: var(--surface); }
+
+      .site-hero-platforms {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .site-platform-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 5px 14px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .site-platform-free {
+        color: #34d399;
+        border-color: #34d39930;
+        background: #34d3990d;
+      }
+
+      @media (max-width: 640px) {
+        .site-nav-links a:not(.site-nav-gh) { display: none; }
+        .site-hero { padding: 64px 20px 56px; }
+      }
+  </style>
+</head>
+<body>
+    <header class="site-nav">
+      <div class="site-nav-inner">
+        <a href="#" class="site-nav-logo">
+          <img src="favicon.png" alt="LightScrapVidz" />
+          <span>LightScrapVidz</span>
+        </a>
+        <nav class="site-nav-links">
+        <a href="#install" data-fr="Installation" data-en="Install">Installation</a>
+        <a href="#uninstall" data-fr="D&eacute;sinstallation" data-en="Uninstall">D&eacute;sinstallation</a>
+        <a href="https://github.com/light-scrap-vidz/light-scrap-vidz" target="_blank" rel="noopener" class="site-nav-gh">GitHub</a>
+        </nav>
+        <button class="lang-toggle" id="langToggle" aria-label="Switch language">EN</button>
+      </div>
+    </header>
+
+    <section class="site-hero">
+      <div class="site-hero-inner">
+        <img src="favicon.png" alt="LightScrapVidz" class="site-hero-logo" />
+        <h1 class="site-hero-title" data-fr="T&eacute;l&eacute;chargez des vid&eacute;os de partout." data-en="Download videos from anywhere.">T&eacute;l&eacute;chargez des vid&eacute;os de partout.</h1>
+        <p class="site-hero-sub" data-fr="YouTube, TikTok, Instagram, Facebook &mdash; et tout site pris en charge par yt-dlp. En MP4 ou en MP3." data-en="YouTube, TikTok, Instagram, Facebook &mdash; and any site yt-dlp supports. As MP4 or MP3.">YouTube, TikTok, Instagram, Facebook &mdash; et tout site pris en charge par yt-dlp. En MP4 ou en MP3.</p>
+        <div class="site-hero-actions">
+          <a href="#install" class="site-btn-primary" data-fr="Télécharger" data-en="Download">Télécharger</a>
+          <a href="https://github.com/light-scrap-vidz/light-scrap-vidz" target="_blank" rel="noopener" class="site-btn-ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg> GitHub</a>
+        </div>
+        <div class="site-hero-platforms">
+          <span class="site-platform-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg> macOS</span>
+          <span class="site-platform-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021C7.309.358 3.561 3.522 2.27 7.665c-.01.03-.019.06-.027.09C.594 9.73 0 11.89 0 14.024 0 19.983 5.04 24 10.63 24c1.57 0 3.1-.3 4.52-.84l-.012.006c.8-.3 1.56-.68 2.26-1.13A11.73 11.73 0 0 0 24 12.06C24 5.44 18.854.037 12.504 0zm-.218 2.375c5.16.09 9.12 4.18 9.12 9.295 0 2.77-1.19 5.27-3.08 7.01a9.71 9.71 0 0 1-6.83 2.75c-4.94 0-8.94-3.74-9.27-8.47l-.004-.09c.36-3.67 3.07-6.67 6.63-7.47.45-.1.91-.15 1.43-.02z"/></svg> Linux</span>
+          <span class="site-platform-badge site-platform-free" data-fr="100% Gratuit" data-en="100% Free">100% Gratuit</span>
+        </div>
+      </div>
+      <div class="site-hero-glow"></div>
+    </section>
+
+<section class="feature-tags">
+  <div class="features">
+    <span class="feature-tag" data-fr="MP4 et MP3" data-en="MP4 &amp; MP3">MP4 et MP3</span>
+    <span class="feature-tag" data-fr="Playlists" data-en="Playlist support">Playlists</span>
+    <span class="feature-tag" data-fr="File d’attente" data-en="Download queue">File d’attente</span>
+    <span class="feature-tag" data-fr="Cookies du navigateur" data-en="Browser cookie auth">Cookies du navigateur</span>
+    <span class="feature-tag" data-fr="Choix de la qualité" data-en="Quality selector">Choix de la qualité</span>
+    <span class="feature-tag" data-fr="Notifications système" data-en="System notifications">Notifications système</span>
+  </div>
+</section>
+
+<main>
+
+  <!-- Install -->
+  <section id="install">
+    <h2 data-fr="Installation" data-en="Install">Installation</h2>
+    <div class="install-card">
+      <div class="install-card-header">
+        <span class="badge-reco" data-fr="Recommandé" data-en="Recommended">Recommandé</span>
+        <h2 data-fr="macOS &amp; Linux — une seule commande" data-en="macOS &amp; Linux — one command">macOS &amp; Linux — une seule commande</h2>
+        <p data-fr="Détecte la plateforme et l’architecture. Fonctionne sur macOS (Apple Silicon) et Linux." data-en="Detects your platform and architecture. Works on macOS (Apple Silicon) and Linux.">Détecte la plateforme et l’architecture. Fonctionne sur macOS (Apple Silicon) et Linux.</p>
+      </div>
+      <div class="command-block">
+        <code id="cmd">curl -fsSL https://raw.githubusercontent.com/light-scrap-vidz/light-scrap-vidz/main/install.sh | bash</code>
+        <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy install command" data-fr="Copier" data-en="Copy">Copier</button>
+      </div>
+      <div class="pills">
+        <span class="pill">macOS → Homebrew</span>
+        <span class="pill">Ubuntu / Debian → .deb</span>
+        <span class="pill" data-fr="Autres Linux → AppImage" data-en="Other Linux → AppImage">Autres Linux → AppImage</span>
+      </div>
+    </div>
+
+    <p class="alt-divider" data-fr="ou installer manuellement" data-en="or install manually">ou installer manuellement</p>
+
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-card-label">macOS &middot; Homebrew</div>
+        <div class="cmd-line">
+          <code>brew install --cask light-scrap-vidz/tap/light-scrap-vidz</code>
+          <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy macOS install command" data-fr="Copier" data-en="Copy">Copier</button>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-label">Linux &middot; Debian / Ubuntu</div>
+        <div class="cmd-line">
+          <code>curl -fsSL -o light-scrap-vidz.deb "$(curl -fsSL https://api.github.com/repos/light-scrap-vidz/light-scrap-vidz/releases/latest | grep -o 'https://[^"]*_amd64\.deb' | head -1)" &amp;&amp; sudo apt install ./light-scrap-vidz.deb</code>
+          <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy Linux install command" data-fr="Copier" data-en="Copy">Copier</button>
+        </div>
+        <div class="cmd-note" data-fr="T&eacute;l&eacute;chargez le .deb depuis la page des releases." data-en="Grab the .deb from the releases page.">T&eacute;l&eacute;chargez le .deb depuis la page des releases.</div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-label">Linux &middot; AppImage</div>
+        <div class="cmd-line">
+          <code>mkdir -p ~/.local/bin &amp;&amp; curl -fsSL -o ~/.local/bin/light-scrap-vidz.AppImage "$(curl -fsSL https://api.github.com/repos/light-scrap-vidz/light-scrap-vidz/releases/latest | grep -o 'https://[^"]*_amd64\.AppImage' | head -1)" &amp;&amp; chmod +x ~/.local/bin/light-scrap-vidz.AppImage</code>
+          <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy AppImage install command" data-fr="Copier" data-en="Copy">Copier</button>
+        </div>
+        <div class="cmd-note" data-fr="Ou laissez le script d&rsquo;installation le poser dans ~/.local/bin." data-en="Or let the install script place it in ~/.local/bin.">Ou laissez le script d&rsquo;installation le poser dans ~/.local/bin.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Uninstall -->
+  <section id="uninstall">
+    <h2 data-fr="Désinstallation" data-en="Uninstall">Désinstallation</h2>
+    <div class="install-card">
+      <div class="install-card-header">
+        <span class="badge-reco" data-fr="Recommandé" data-en="Recommended">Recommandé</span>
+        <h2 data-fr="macOS &amp; Linux — une seule commande" data-en="macOS &amp; Linux — one command">macOS &amp; Linux — une seule commande</h2>
+        <p data-fr="Retire l’application quelle que soit la façon dont elle a été installée. Vos réglages sont conservés." data-en="Removes the app whichever way it was installed. Your settings are kept.">Retire l’application quelle que soit la façon dont elle a été installée. Vos réglages sont conservés.</p>
+      </div>
+      <div class="command-block">
+        <code>curl -fsSL https://raw.githubusercontent.com/light-scrap-vidz/light-scrap-vidz/main/uninstall.sh | bash</code>
+        <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy uninstall command" data-fr="Copier" data-en="Copy">Copier</button>
+      </div>
+    </div>
+
+    <p class="alt-divider" data-fr="ou désinstaller manuellement" data-en="or uninstall manually">ou désinstaller manuellement</p>
+
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-card-label">macOS · Homebrew</div>
+        <div class="cmd-line">
+          <code>brew uninstall --cask light-scrap-vidz</code>
+          <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy macOS uninstall command" data-fr="Copier" data-en="Copy">Copier</button>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-label">Linux · Debian / Ubuntu</div>
+        <div class="cmd-line">
+          <code>sudo apt remove light-scrap-vidz</code>
+          <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy Linux uninstall command" data-fr="Copier" data-en="Copy">Copier</button>
+        </div>
+        <div class="cmd-note" data-fr="Utilisez sudo apt purge pour retirer aussi les fichiers de configuration." data-en="Use sudo apt purge to also remove config files.">Utilisez sudo apt purge pour retirer aussi les fichiers de configuration.</div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-label">Linux · AppImage</div>
+        <div class="cmd-line">
+          <code>rm ~/.local/bin/light-scrap-vidz.AppImage</code>
+          <button class="copy-btn" onclick="copyCmd(this)" aria-label="Copy AppImage uninstall command" data-fr="Copier" data-en="Copy">Copier</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Requirements -->
+  <section id="requirements">
+    <h2 data-fr="Prérequis" data-en="Requirements">Prérequis</h2>
+    <ul class="req-list">
+      <li><strong>macOS</strong><span data-fr="Apple Silicon (M1 ou plus récent)" data-en="Apple Silicon (M1 or later)">Apple Silicon (M1 ou plus récent)</span></li>
+      <li><strong>Linux</strong><span data-fr="x86_64 — Debian 12+ / Ubuntu 22.04+ recommandés ; autres distributions via AppImage" data-en="x86_64 — Debian 12+ / Ubuntu 22.04+ recommended; other distros via AppImage">x86_64 — Debian 12+ / Ubuntu 22.04+ recommandés ; autres distributions via AppImage</span></li>
+      <li data-fr="Aucune installation manuelle de yt-dlp : il est fourni avec le paquet" data-en="No manual yt-dlp installation needed — it is bundled in the package">Aucune installation manuelle de yt-dlp : il est fourni avec le paquet</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <span>LightScrapVidz</span>
+  <a href="https://github.com/light-scrap-vidz/light-scrap-vidz">GitHub →</a>
+</footer>
+
+<script>
+      // Le formateur HTML peut replier une commande longue sur deux lignes ; un
+      // textContent brut recopierait alors le retour à la ligne et l'indentation
+      // dans le presse-papiers. On aplatit toute suite d'espaces.
+      function commandText(el) {
+        return el.textContent.replace(/\s+/g, " ").trim();
+      }
+
+  // ── Bascule de langue ──
+  // Chaque texte porte ses deux versions en attributs ; seul le contenu change.
+  let lang = localStorage.getItem('lc-lang') || 'fr';
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-fr][data-en]').forEach((el) => {
+      el.textContent = el.dataset[lang];
+    });
+    document.getElementById('langToggle').textContent = lang === 'fr' ? 'EN' : 'FR';
+    document.title =
+      lang === 'fr'
+        ? 'LightScrapVidz — Téléchargeur de vidéos'
+        : 'LightScrapVidz — Video downloader';
+  }
+
+  document.getElementById('langToggle').addEventListener('click', () => {
+    lang = lang === 'fr' ? 'en' : 'fr';
+    localStorage.setItem('lc-lang', lang);
+    applyLang();
+  });
+
+  applyLang();
+
+  // ── Copie des commandes ──
+  function copyCmd(btn) {
+    const code = btn.closest('.command-block, .cmd-line').querySelector('code');
+    navigator.clipboard.writeText(commandText(code)).then(() => {
+      const original = btn.textContent;
+      btn.textContent = lang === 'fr' ? 'Copié !' : 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>

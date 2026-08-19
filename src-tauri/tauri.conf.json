@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "light-scrap-vidz",
+  "version": "1.0.0",
+  "identifier": "com.lightscrape.vidz",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "light-scrap-vidz",
+        "width": 960,
+        "height": 680,
+        "minWidth": 700,
+        "minHeight": 560,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage", "app"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": ["binaries/yt-dlp-lsv"],
+    "linux": {
+      "deb": {
+        "depends": ["ffmpeg", "policykit-1"]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEyMzM0MEQwNEVENkU3OTIKUldTUzU5Wk8wRUF6RWthVkQ5SXQvQkpzYkxia3Z5VFlGbFdzelpTbGZjVFZLNXJGbG0yL2srYmEK",
+      "endpoints": [
+        "https://github.com/light-scrap-vidz/light-scrap-vidz/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Build artifacts
+*.dmg
+*.AppImage
+*.deb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+src-tauri/binaries/
+
+# test coverage output
+coverage

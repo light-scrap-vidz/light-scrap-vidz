@@ -1,0 +1,230 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  # tauri-action names the bundles after the version in tauri.conf.json, while the
+  # tap workflow derives the version from the git tag. When they disagree the release
+  # publishes assets under a name the cask url cannot resolve, and the failure only
+  # surfaces after the GitHub release is already public.
+  check-version:
+    name: Check the tag matches the manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare the tag with tauri.conf.json and Cargo.toml
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          WANT="${TAG#v}"
+          CONF=$(python3 -c "import json;print(json.load(open('src-tauri/tauri.conf.json'))['version'])")
+          CARGO=$(grep -m1 '^version = ' src-tauri/Cargo.toml | cut -d'"' -f2)
+          echo "tag=$WANT tauri.conf.json=$CONF Cargo.toml=$CARGO"
+          [ "$WANT" = "$CONF" ] || { echo "::error::tag $WANT does not match tauri.conf.json $CONF"; exit 1; }
+          [ "$WANT" = "$CARGO" ] || { echo "::error::tag $WANT does not match Cargo.toml $CARGO"; exit 1; }
+
+  publish:
+    needs: [check-version]
+    name: Publish ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            label: macOS-arm64
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            label: Linux-x86_64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Bundle yt-dlp binary
+        run: |
+          mkdir -p src-tauri/binaries
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" \
+              -o "src-tauri/binaries/yt-dlp-lsv-aarch64-apple-darwin"
+            chmod +x "src-tauri/binaries/yt-dlp-lsv-aarch64-apple-darwin"
+          else
+            curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" \
+              -o "src-tauri/binaries/yt-dlp-lsv-x86_64-unknown-linux-gnu"
+            chmod +x "src-tauri/binaries/yt-dlp-lsv-x86_64-unknown-linux-gnu"
+          fi
+
+      - name: Build Tauri app
+        run: npm run tauri -- build --target ${{ matrix.target }}
+
+      - name: Package app for updater
+        run: |
+          TARGET="${{ matrix.target }}"
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            BUNDLE="src-tauri/target/${TARGET}/release/bundle/macos"
+            tar czf "${BUNDLE}/light-scrap-vidz_aarch64.app.tar.gz" \
+              -C "${BUNDLE}" light-scrap-vidz.app
+          else
+            BUNDLE="src-tauri/target/${TARGET}/release/bundle/appimage"
+            APPIMAGE="light-scrap-vidz_${VERSION}_amd64.AppImage"
+            tar czf "${BUNDLE}/${APPIMAGE}.tar.gz" \
+              -C "${BUNDLE}" "${APPIMAGE}"
+          fi
+
+      - name: Sign updater bundles
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          TARGET="${{ matrix.target }}"
+          BUNDLE="src-tauri/target/${TARGET}/release/bundle"
+          find "${BUNDLE}" \( -name "*.AppImage.tar.gz" -o -name "*_aarch64.app.tar.gz" \) \
+            ! -name "*vid-z*" | while read bundle; do
+            echo "Signing: $bundle"
+            npm run tauri -- signer sign "$bundle"
+            SIG="${bundle}.sig"
+            echo "Sig size: $(wc -c < "$SIG") bytes"
+          done
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          IS_PRE="${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}"
+          EXTRA=""
+          [ "$IS_PRE" = "true" ] && EXTRA="--prerelease"
+          gh release create "$TAG" --title "$TAG" --notes "Release $TAG" --draft $EXTRA \
+            --repo sindus/light-scrap-vidz 2>/dev/null || true
+
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          TARGET="${{ matrix.target }}"
+          BUNDLE="src-tauri/target/${TARGET}/release/bundle"
+          find "${BUNDLE}" \
+            \( -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" \
+               -o -name "*.app.tar.gz" -o -name "*.AppImage.tar.gz" \) \
+            ! -name "*vid-z*" | while read f; do
+            echo "Uploading: $(basename "$f")"
+            gh release upload "$TAG" "$f" --clobber --repo sindus/light-scrap-vidz
+          done
+
+      - name: Upload signature artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sig-${{ matrix.target }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage.tar.gz.sig
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*_aarch64.app.tar.gz.sig
+          retention-days: 1
+
+  latest-json:
+    name: Generate latest.json
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download signatures
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sig-*
+          merge-multiple: true
+          path: sigs
+
+      - name: Generate and upload latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          BASE="https://github.com/sindus/light-scrap-vidz/releases/download/${TAG}"
+
+          find sigs -name "*.sig" | sort
+          LINUX_SIG=$(find sigs -name "*.AppImage.tar.gz.sig" ! -name "*vid-z*" | head -1 | xargs cat 2>/dev/null || echo "")
+          DARWIN_SIG=$(find sigs -name "*_aarch64.app.tar.gz.sig" | head -1 | xargs cat 2>/dev/null || echo "")
+
+          python3 -c "
+          import json, sys
+          data = {
+            'version': sys.argv[1],
+            'notes': '',
+            'pub_date': sys.argv[2],
+            'platforms': {
+              'linux-x86_64': {
+                'signature': sys.argv[3].strip(),
+                'url': sys.argv[4] + '/light-scrap-vidz_' + sys.argv[1] + '_amd64.AppImage.tar.gz'
+              },
+              'darwin-aarch64': {
+                'signature': sys.argv[5].strip(),
+                'url': sys.argv[4] + '/light-scrap-vidz_aarch64.app.tar.gz'
+              }
+            }
+          }
+          print(json.dumps(data, indent=2))
+          with open('latest.json', 'w') as f:
+            json.dump(data, f, indent=2)
+          " "$VERSION" "$DATE" "$LINUX_SIG" "$BASE" "$DARWIN_SIG"
+
+          echo "Uploading latest.json..."
+          gh release upload "$TAG" latest.json --clobber --repo sindus/light-scrap-vidz
+
+  # La release reste en brouillon le temps de la construction : elle ne devient
+  # publique qu'une fois toutes les plateformes réussies et latest.json déposé,
+  # pour qu'une seule d'entre elles qui casse ne laisse jamais une release
+  # incomplète — ni un updater qui pointe dans le vide — aux utilisateurs.
+  publish-release:
+    name: Publish GitHub Release
+    needs: [publish, latest-json]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark release as latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          IS_PRE="${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}"
+          EXTRA=""
+          [ "$IS_PRE" = "true" ] || EXTRA="--latest"
+          gh release edit "$TAG" --draft=false $EXTRA --repo sindus/light-scrap-vidz
