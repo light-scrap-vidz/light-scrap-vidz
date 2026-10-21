@@ -8,6 +8,12 @@ const SYSTEM_PATHS: &[&str] = &[
     "/opt/local/bin/yt-dlp",
 ];
 
+fn modified(path: &Path) -> std::time::SystemTime {
+    std::fs::metadata(path)
+        .and_then(|m| m.modified())
+        .unwrap_or(std::time::UNIX_EPOCH)
+}
+
 pub struct YtDlpBinary {
     path: PathBuf,
 }
@@ -27,22 +33,32 @@ impl YtDlpBinary {
             }
         }
 
-        // 2. Binaire mis à jour par l'utilisateur, dans le dossier de données inscriptible
-        //    (c'est là qu'écrit « Update yt-dlp »)
-        if let Some(dir) = data_dir {
-            let p = dir.join("yt-dlp");
-            if p.is_file() {
-                return Ok(Self { path: p });
-            }
+        // 2-3. Binaire mis à jour par l'utilisateur (dossier de données) et sidecar embarqué.
+        //    Le plus récent des deux gagne : une mise à jour de l'app livre un sidecar plus
+        //    frais qu'un vieux binaire téléchargé, et « Update yt-dlp » dépasse le sidecar.
+        //    Le sidecar est nommé `yt-dlp-lsv` pour ne pas entrer en conflit avec le paquet
+        //    système /usr/bin/yt-dlp ; Tauri l'installe à côté de l'exécutable, d'où le
+        //    dossier de ressources et celui de l'exécutable.
+        let mut sidecar_dirs: Vec<PathBuf> =
+            resource_dir.map(Path::to_path_buf).into_iter().collect();
+        if let Some(dir) = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(Path::to_path_buf))
+        {
+            sidecar_dirs.push(dir);
         }
-
-        // 3. Sidecar embarqué dans le dossier de ressources. Nommé `yt-dlp-lsv` pour ne pas
-        //    entrer en conflit avec le paquet système /usr/bin/yt-dlp.
-        if let Some(dir) = resource_dir {
-            let p = dir.join("yt-dlp-lsv");
-            if p.is_file() {
-                return Ok(Self { path: p });
+        let sidecar = sidecar_dirs
+            .iter()
+            .map(|d| d.join("yt-dlp-lsv"))
+            .find(|p| p.is_file());
+        let updated = data_dir.map(|d| d.join("yt-dlp")).filter(|p| p.is_file());
+        match (updated, sidecar) {
+            (Some(u), Some(sc)) => {
+                let path = if modified(&u) >= modified(&sc) { u } else { sc };
+                return Ok(Self { path });
             }
+            (Some(path), None) | (None, Some(path)) => return Ok(Self { path }),
+            (None, None) => {}
         }
 
         // 4. Repli sur le système (builds de dev sans binaire embarqué)
@@ -82,7 +98,10 @@ impl YtDlpBinary {
                 });
             }
         }
-        Err("yt-dlp not found. Please restart the app to trigger automatic setup.".to_string())
+        Err(
+            "yt-dlp not found. Open Settings and click \"Check for updates\" to download it."
+                .to_string(),
+        )
     }
 
     pub fn path(&self) -> &Path {
@@ -265,14 +284,31 @@ mod tests {
     fn the_updated_binary_in_the_data_dir_comes_before_the_sidecar() {
         let _guard = EnvGuard::new();
         let _empty = no_system_ytdlp();
-        let data = tempfile::tempdir().unwrap();
-        let updated = fake_binary(data.path());
         let res = tempfile::tempdir().unwrap();
         std::fs::write(res.path().join("yt-dlp-lsv"), b"#!/bin/sh\n").unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let data = tempfile::tempdir().unwrap();
+        let updated = fake_binary(data.path());
 
         let found = YtDlpBinary::resolve(Some(data.path()), Some(res.path())).unwrap();
 
         assert_eq!(found.path(), updated);
+    }
+
+    #[test]
+    fn a_sidecar_newer_than_the_downloaded_binary_wins() {
+        let _guard = EnvGuard::new();
+        let _empty = no_system_ytdlp();
+        let data = tempfile::tempdir().unwrap();
+        fake_binary(data.path());
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let res = tempfile::tempdir().unwrap();
+        let sidecar = res.path().join("yt-dlp-lsv");
+        std::fs::write(&sidecar, b"#!/bin/sh\n").unwrap();
+
+        let found = YtDlpBinary::resolve(Some(data.path()), Some(res.path())).unwrap();
+
+        assert_eq!(found.path(), sidecar);
     }
 
     #[test]

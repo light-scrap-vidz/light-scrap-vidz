@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1420"
     }
   },
   "bundle": {
@@ -39,7 +39,7 @@
     "externalBin": ["binaries/yt-dlp-lsv"],
     "linux": {
       "deb": {
-        "depends": ["ffmpeg", "policykit-1"]
+        "depends": ["ffmpeg", "curl"]
       }
     }
   },

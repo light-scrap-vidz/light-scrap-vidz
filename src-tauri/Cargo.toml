@@ -15,7 +15,7 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["devtools"] }
+tauri = { version = "2" }
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
@@ -24,10 +24,10 @@ tauri-plugin-process = "2"
 tauri-plugin-clipboard-manager = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["macros", "process", "io-util", "sync", "time", "rt-multi-thread"] }
 regex = "1"
-uuid = { version = "1", features = ["v4"] }
-anyhow = "1"
+base64 = "0.22"
+sha2 = "0.10"
 
 [dev-dependencies]
 # unit tests via cargo test

@@ -1,12 +1,36 @@
-use std::path::PathBuf;
+use std::convert::Infallible;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::str::FromStr;
 
 /// Platforms that require browser impersonation (curl-cffi).
 const IMPERSONATE_DOMAINS: &[&str] = &["tiktok.com", "dailymotion.com", "dai.ly"];
 
 fn needs_impersonation(url: &str) -> bool {
     let lower = url.to_lowercase();
-    IMPERSONATE_DOMAINS.iter().any(|d| lower.contains(d))
+    let rest = lower.split_once("://").map_or(lower.as_str(), |(_, r)| r);
+    let host = rest.split(['/', '?', '#']).next().unwrap_or("");
+    let host = host.rsplit('@').next().unwrap_or("");
+    let host = host.split(':').next().unwrap_or("");
+    IMPERSONATE_DOMAINS
+        .iter()
+        .any(|d| host == *d || host.ends_with(&format!(".{d}")))
+}
+
+/// Début commun à toutes les commandes yt-dlp : environnement, cookies, impersonation.
+fn base_command(binary: &Path, url: &str, cookies_browser: &Option<String>) -> Command {
+    let mut cmd = Command::new(binary);
+    // A GUI app on macOS does not inherit the shell PATH, so a Homebrew ffmpeg would be
+    // invisible to yt-dlp (merging and MP3 extraction need it).
+    let path = std::env::var("PATH").unwrap_or_default();
+    cmd.env("PATH", format!("{path}:/opt/homebrew/bin:/usr/local/bin"));
+    if let Some(browser) = cookies_browser {
+        cmd.args(["--cookies-from-browser", browser]);
+    }
+    if needs_impersonation(url) {
+        cmd.args(["--impersonate", "chrome"]);
+    }
+    cmd
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -17,16 +41,21 @@ pub enum Quality {
     P480,
 }
 
-impl Quality {
-    pub fn from_str(s: &str) -> Self {
-        match s {
+impl FromStr for Quality {
+    type Err = Infallible;
+
+    /// Toute valeur inconnue retombe sur « best » : l'interface ne peut pas envoyer pire.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
             "1080p" => Self::P1080,
             "720p" => Self::P720,
             "480p" => Self::P480,
             _ => Self::Best,
-        }
+        })
     }
+}
 
+impl Quality {
     pub fn format_spec(&self) -> &'static str {
         // Prefer H.264 (avc1) + AAC (mp4a) for universal MP4 compatibility.
         // YouTube serves VP9/AV1 even in MP4 containers, which breaks many players.
@@ -36,13 +65,13 @@ impl Quality {
                 "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
             }
             Self::P1080 => {
-                "bestvideo[height<=1080][ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]"
+                "bestvideo[height<=?1080][ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=?1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=?1080][ext=mp4]/best[height<=?1080]/best"
             }
             Self::P720 => {
-                "bestvideo[height<=720][ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]"
+                "bestvideo[height<=?720][ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=?720][ext=mp4]+bestaudio[ext=m4a]/best[height<=?720][ext=mp4]/best[height<=?720]/best"
             }
             Self::P480 => {
-                "bestvideo[height<=480][ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best[height<=480]"
+                "bestvideo[height<=?480][ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=?480][ext=mp4]+bestaudio[ext=m4a]/best[height<=?480][ext=mp4]/best[height<=?480]/best"
             }
         }
     }
@@ -56,14 +85,8 @@ pub struct InfoCommand {
 
 impl InfoCommand {
     pub fn build(&self) -> Command {
-        let mut cmd = Command::new(&self.binary);
-        if let Some(browser) = &self.cookies_browser {
-            cmd.args(["--cookies-from-browser", browser]);
-        }
-        if needs_impersonation(&self.url) {
-            cmd.args(["--impersonate", "chrome"]);
-        }
-        cmd.args(["--dump-json", "--no-playlist", &self.url]);
+        let mut cmd = base_command(&self.binary, &self.url, &self.cookies_browser);
+        cmd.args(["--dump-json", "--no-playlist", "--", &self.url]);
         cmd
     }
 }
@@ -79,13 +102,7 @@ pub struct DownloadCommand {
 
 impl DownloadCommand {
     pub fn build(&self) -> Command {
-        let mut cmd = Command::new(&self.binary);
-        if let Some(browser) = &self.cookies_browser {
-            cmd.args(["--cookies-from-browser", browser]);
-        }
-        if needs_impersonation(&self.url) {
-            cmd.args(["--impersonate", "chrome"]);
-        }
+        let mut cmd = base_command(&self.binary, &self.url, &self.cookies_browser);
         if self.audio_only {
             cmd.args(["-x", "--audio-format", "mp3", "--audio-quality", "0"]);
         } else {
@@ -99,11 +116,14 @@ impl DownloadCommand {
         cmd.args([
             "--progress",
             "--newline",
+            "--progress-delta",
+            "0.5",
             "-P",
             self.output_dir.to_str().unwrap_or("."),
             "-o",
-            "%(title)s.%(ext)s",
+            "%(title).150B [%(id)s].%(ext)s",
             "--no-playlist",
+            "--",
             &self.url,
         ]);
         cmd
@@ -121,19 +141,14 @@ pub struct PlaylistInfoCommand {
 
 impl PlaylistInfoCommand {
     pub fn build(&self) -> Command {
-        let mut cmd = Command::new(&self.binary);
-        if let Some(browser) = &self.cookies_browser {
-            cmd.args(["--cookies-from-browser", browser]);
-        }
-        if needs_impersonation(&self.url) {
-            cmd.args(["--impersonate", "chrome"]);
-        }
+        let mut cmd = base_command(&self.binary, &self.url, &self.cookies_browser);
         cmd.args([
             "--flat-playlist",
             "--dump-single-json",
             "--playlist-end",
             &self.peek.to_string(),
             "--no-warnings",
+            "--",
             &self.url,
         ]);
         cmd
@@ -155,13 +170,7 @@ pub struct PlaylistDownloadCommand {
 
 impl PlaylistDownloadCommand {
     pub fn build(&self) -> Command {
-        let mut cmd = Command::new(&self.binary);
-        if let Some(browser) = &self.cookies_browser {
-            cmd.args(["--cookies-from-browser", browser]);
-        }
-        if needs_impersonation(&self.url) {
-            cmd.args(["--impersonate", "chrome"]);
-        }
+        let mut cmd = base_command(&self.binary, &self.url, &self.cookies_browser);
         if self.audio_only {
             cmd.args(["-x", "--audio-format", "mp3", "--audio-quality", "0"]);
         } else {
@@ -176,17 +185,19 @@ impl PlaylistDownloadCommand {
             "--yes-playlist",
             "--progress",
             "--newline",
+            "--progress-delta",
+            "0.5",
             "-P",
             self.output_dir.to_str().unwrap_or("."),
             "-o",
-            "%(playlist_index)s - %(title)s.%(ext)s",
+            "%(playlist_index)s - %(title).150B [%(id)s].%(ext)s",
         ]);
         if let Some(n) = self.playlist_end {
             if n > 0 {
                 cmd.args(["--playlist-end", &n.to_string()]);
             }
         }
-        cmd.arg(&self.url);
+        cmd.args(["--", &self.url]);
         cmd
     }
 }
@@ -196,12 +207,65 @@ mod tests {
     use super::*;
 
     #[test]
+    fn homebrew_is_on_the_path_of_the_spawned_process() {
+        let cmd = InfoCommand {
+            binary: PathBuf::from("yt-dlp"),
+            url: "https://youtu.be/x".to_string(),
+            cookies_browser: None,
+        }
+        .build();
+        let path = cmd
+            .get_envs()
+            .find(|(k, _)| *k == "PATH")
+            .and_then(|(_, v)| v)
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        assert!(path.contains("/opt/homebrew/bin"));
+    }
+
+    #[test]
+    fn impersonation_is_decided_on_the_host_only() {
+        assert!(needs_impersonation("https://www.tiktok.com/@a/video/1"));
+        assert!(needs_impersonation("https://dai.ly/x1"));
+        assert!(!needs_impersonation("https://example.com/?ref=tiktok.com"));
+        assert!(!needs_impersonation("https://nottiktok.com/x"));
+    }
+
+    #[test]
+    fn the_url_comes_after_a_double_dash() {
+        let cmd = DownloadCommand {
+            binary: PathBuf::from("yt-dlp"),
+            url: "--exec=evil".to_string(),
+            output_dir: PathBuf::from("/tmp"),
+            quality: Quality::Best,
+            cookies_browser: None,
+            audio_only: false,
+        };
+        let args: Vec<String> = cmd
+            .build()
+            .get_args()
+            .map(|a| a.to_string_lossy().into())
+            .collect();
+        let n = args.len();
+        assert_eq!(args[n - 2], "--");
+        assert_eq!(args[n - 1], "--exec=evil");
+    }
+
+    #[test]
+    fn a_quality_cap_keeps_formats_of_unknown_height_and_falls_back() {
+        let spec = Quality::P720.format_spec();
+        assert!(spec.contains("height<=?720"));
+        assert!(spec.ends_with("/best"));
+    }
+
+    #[test]
     fn test_quality_from_str() {
-        assert_eq!(Quality::from_str("best"), Quality::Best);
-        assert_eq!(Quality::from_str("1080p"), Quality::P1080);
-        assert_eq!(Quality::from_str("720p"), Quality::P720);
-        assert_eq!(Quality::from_str("480p"), Quality::P480);
-        assert_eq!(Quality::from_str("unknown"), Quality::Best);
+        assert_eq!(Quality::from_str("best").unwrap(), Quality::Best);
+        assert_eq!(Quality::from_str("1080p").unwrap(), Quality::P1080);
+        assert_eq!(Quality::from_str("720p").unwrap(), Quality::P720);
+        assert_eq!(Quality::from_str("480p").unwrap(), Quality::P480);
+        assert_eq!(Quality::from_str("unknown").unwrap(), Quality::Best);
     }
 
     #[test]

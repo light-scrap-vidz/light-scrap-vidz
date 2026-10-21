@@ -11,9 +11,10 @@
     "notification:allow-request-permission",
     "notification:allow-is-permission-granted",
     "notification:allow-notify",
-    "opener:default",
-    "opener:allow-reveal-item-in-dir",
-    "opener:allow-open-path",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://github.com/light-scrap-vidz/light-scrap-vidz/releases/*" }]
+    },
     "updater:default",
     "updater:allow-check",
     "updater:allow-download-and-install",

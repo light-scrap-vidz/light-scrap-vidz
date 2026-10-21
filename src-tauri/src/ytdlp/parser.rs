@@ -3,13 +3,13 @@ use std::sync::LazyLock;
 
 static PROGRESS_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r"^\[download\]\s+([\d.]+)%\s+of\s+~?[\d.]+\s*\w+\s+at\s+([\d.]+\s*\w+/s|Unknown\s*B/s)\s+ETA\s+([\d:]+|Unknown)",
+        r"^\[download\]\s+([\d.]+)%\s+of\s+~?\s*[\d.]+\s*\w+\s+at\s+([\d.]+\s*\w+/s|Unknown\s*B/s)\s+ETA\s+([\d:]+|Unknown)",
     )
     .unwrap()
 });
 
 static DESTINATION_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^\[download\] Destination: (.+)$").unwrap());
+    LazyLock::new(|| Regex::new(r"^\[(?:download|ExtractAudio)\] Destination: (.+)$").unwrap());
 
 // Captures the final merged filepath when yt-dlp combines video+audio streams
 static MERGER_RE: LazyLock<Regex> =
@@ -118,6 +118,24 @@ mod tests {
         assert_eq!(
             result,
             Some("/home/user/Downloads/Big Buck Bunny.mp4".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_real_yt_dlp_padding_with_estimate_and_fragments() {
+        // Format produced by yt-dlp: sizes are right-aligned on 10 characters.
+        let line = "[download]   1.4% of ~  92.03MiB at    1.06MiB/s ETA 01:32 (frag 2/146)";
+        let p = parse_progress_line(line).unwrap();
+        assert!((p.percent - 1.4).abs() < 0.01);
+        assert_eq!(p.eta, "01:32");
+    }
+
+    #[test]
+    fn test_parse_extract_audio_destination() {
+        let line = "[ExtractAudio] Destination: /home/user/Downloads/song.mp3";
+        assert_eq!(
+            parse_destination_line(line),
+            Some("/home/user/Downloads/song.mp3".to_string())
         );
     }
 

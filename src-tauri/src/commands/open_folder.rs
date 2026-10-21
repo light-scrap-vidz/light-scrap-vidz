@@ -14,23 +14,46 @@ pub fn folder_to_reveal(path: &str) -> PathBuf {
 #[tauri::command]
 pub async fn open_folder(path: String) -> Result<(), String> {
     let dir = folder_to_reveal(&path);
+    let is_file = Path::new(&path).is_file();
 
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
-            .arg(&dir)
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        // `open -R` selects the file in Finder.
+        let mut cmd = std::process::Command::new("open");
+        if is_file {
+            cmd.args(["-R", &path]);
+        } else {
+            cmd.arg(&dir);
+        }
+        cmd.spawn().map_err(|e| e.to_string())?;
     }
 
     #[cfg(target_os = "linux")]
     {
-        std::process::Command::new("xdg-open")
-            .arg(&dir)
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        // The FileManager1 D-Bus interface selects the file; fall back to opening its folder.
+        let selected = is_file
+            && std::process::Command::new("dbus-send")
+                .args([
+                    "--session",
+                    "--dest=org.freedesktop.FileManager1",
+                    "--type=method_call",
+                    "/org/freedesktop/FileManager1",
+                    "org.freedesktop.FileManager1.ShowItems",
+                    &format!("array:string:{}", super::reveal::file_uri(&path)),
+                    "string:",
+                ])
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+        if !selected {
+            std::process::Command::new("xdg-open")
+                .arg(&dir)
+                .spawn()
+                .map_err(|e| e.to_string())?;
+        }
     }
 
+    let _ = (&dir, is_file);
     Ok(())
 }
 

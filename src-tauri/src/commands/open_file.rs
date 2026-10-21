@@ -3,11 +3,29 @@ use std::path::Path;
 /// Vérifie que le fichier à ouvrir existe. Séparé de la commande pour que le contrôle
 /// soit testable sans lancer de processus externe.
 pub fn check_openable(path: &str) -> Result<(), String> {
-    if !Path::new(path).exists() {
+    let p = Path::new(path);
+    if !p.exists() {
         return Err(format!("File not found: {path}"));
+    }
+    // Folders are fine (playlist downloads); files must be media: `open`/`xdg-open` would
+    // otherwise launch scripts or applications handed over by the webview.
+    if p.is_file() {
+        let ext = p
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(str::to_lowercase)
+            .unwrap_or_default();
+        if !MEDIA_EXTENSIONS.contains(&ext.as_str()) {
+            return Err(format!("Refusing to open a non-media file: {path}"));
+        }
     }
     Ok(())
 }
+
+const MEDIA_EXTENSIONS: &[&str] = &[
+    "mp4", "mkv", "webm", "mov", "avi", "m4v", "flv", "mp3", "m4a", "opus", "ogg", "wav", "aac",
+    "flac",
+];
 
 #[tauri::command]
 pub async fn open_file(path: String) -> Result<(), String> {
@@ -43,6 +61,15 @@ mod tests {
         std::fs::write(&file, b"x").unwrap();
 
         assert!(check_openable(file.to_str().unwrap()).is_ok());
+    }
+
+    #[test]
+    fn a_non_media_file_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("run.sh");
+        std::fs::write(&file, b"#!/bin/sh").unwrap();
+
+        assert!(check_openable(file.to_str().unwrap()).is_err());
     }
 
     #[test]

@@ -1,10 +1,13 @@
-pub mod deb_update;
 pub mod detect_browsers;
 pub mod download;
+pub mod download_runner;
 pub mod fetch_info;
 pub mod fetch_playlist_info;
+pub mod fetch_slots;
 pub mod fetch_thumbnail;
 pub mod install_kind;
 pub mod open_file;
 pub mod open_folder;
+pub mod reveal;
+pub mod thumb_cache;
 pub mod update_ytdlp;

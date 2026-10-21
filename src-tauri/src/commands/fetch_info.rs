@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
-use std::process::Stdio;
-
+use super::fetch_slots::{run_cancellable, FetchSlots};
 use crate::ytdlp::{builder::InfoCommand, finder::YtDlpBinary};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FormatInfo {
@@ -28,7 +27,9 @@ pub struct VideoInfoResponse {
     pub webpage_url: String,
     #[serde(default)]
     pub extractor: String,
-    #[serde(default)]
+    /// Lu pour le contrat de désérialisation, mais jamais envoyé : l'interface ne s'en sert
+    /// pas et la liste dépasse souvent plusieurs centaines d'entrées.
+    #[serde(default, skip_serializing)]
     pub formats: Vec<FormatInfo>,
 }
 
@@ -47,6 +48,7 @@ pub fn parse_video_info(json: &str) -> Result<VideoInfoResponse, String> {
 #[tauri::command]
 pub async fn fetch_video_info(
     app: tauri::AppHandle,
+    slots: tauri::State<'_, FetchSlots>,
     url: String,
     cookies_browser: Option<String>,
 ) -> Result<VideoInfoResponse, String> {
@@ -58,12 +60,7 @@ pub async fn fetch_video_info(
         cookies_browser,
     }
     .build();
-    let output = tokio::process::Command::from(cmd)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to run yt-dlp: {e}"))?;
+    let output = run_cancellable(&slots, "video", cmd).await?;
 
     if !output.status.success() {
         return Err(ytdlp_error(&output.stderr));

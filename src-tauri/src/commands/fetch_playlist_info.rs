@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
-use std::process::Stdio;
-
+use super::fetch_slots::{run_cancellable, FetchSlots};
 use crate::ytdlp::{builder::PlaylistInfoCommand, finder::YtDlpBinary};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct PlaylistEntry {
@@ -15,7 +14,7 @@ pub struct PlaylistEntry {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PlaylistInfoResponse {
-    #[serde(rename = "_type", default)]
+    #[serde(rename(deserialize = "_type", serialize = "kind"), default)]
     pub kind: String,
     #[serde(default)]
     pub title: String,
@@ -36,6 +35,7 @@ pub fn parse_playlist_info(json: &str) -> Result<PlaylistInfoResponse, String> {
 #[tauri::command]
 pub async fn fetch_playlist_info(
     app: tauri::AppHandle,
+    slots: tauri::State<'_, FetchSlots>,
     url: String,
     cookies_browser: Option<String>,
 ) -> Result<PlaylistInfoResponse, String> {
@@ -49,12 +49,7 @@ pub async fn fetch_playlist_info(
     }
     .build();
 
-    let output = tokio::process::Command::from(cmd)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to run yt-dlp: {e}"))?;
+    let output = run_cancellable(&slots, "playlist", cmd).await?;
 
     if !output.status.success() {
         return Err(crate::commands::fetch_info::ytdlp_error(&output.stderr));
@@ -95,6 +90,16 @@ mod tests {
         let info = parse_playlist_info(r#"{"_type": "video"}"#).unwrap();
 
         assert_eq!(info.kind, "video");
+    }
+
+    #[test]
+    fn the_frontend_receives_the_kind_under_its_own_name() {
+        let info = parse_playlist_info(r#"{"_type": "playlist"}"#).unwrap();
+
+        let sent = serde_json::to_value(&info).unwrap();
+
+        assert_eq!(sent["kind"], "playlist");
+        assert!(sent.get("_type").is_none());
     }
 
     #[test]

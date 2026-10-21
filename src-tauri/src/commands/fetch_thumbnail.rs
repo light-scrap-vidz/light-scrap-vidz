@@ -1,4 +1,9 @@
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::process::Stdio;
+
+use tauri::Manager;
+
+use super::thumb_cache;
 
 /// Type MIME déduit des premiers octets. Séparé de la commande pour être testable
 /// sans appel réseau.
@@ -30,6 +35,10 @@ const REFERER: &str = "Referer: https://www.instagram.com/";
 /// les garde-fous (timeout, plafond, en-têtes) soient vérifiables.
 pub fn curl_args(url: &str) -> Vec<&str> {
     vec![
+        "--proto",
+        "=http,https",
+        "--proto-redir",
+        "=http,https",
         "-L",
         "-s",
         "-f",
@@ -48,9 +57,33 @@ pub fn curl_args(url: &str) -> Vec<&str> {
 }
 
 #[tauri::command]
-pub async fn fetch_thumbnail(url: String) -> Result<String, String> {
+pub async fn fetch_thumbnail(app: tauri::AppHandle, url: String) -> Result<String, String> {
+    let cache_dir = app
+        .path()
+        .app_cache_dir()
+        .ok()
+        .map(|d| d.join("thumbnails"));
+    thumbnail_data_url(cache_dir, url).await
+}
+
+/// Cœur de la commande, sans AppHandle pour rester testable.
+pub async fn thumbnail_data_url(
+    cache_dir: Option<std::path::PathBuf>,
+    url: String,
+) -> Result<String, String> {
     if url.is_empty() {
         return Err("No URL".to_string());
+    }
+    // Only web URLs: the value comes from a remote site and is handed to curl.
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("Unsupported thumbnail URL".to_string());
+    }
+
+    if let Some(bytes) = cache_dir
+        .as_deref()
+        .and_then(|d| thumb_cache::read(d, &url))
+    {
+        return Ok(data_url(mime_from_magic(&bytes), &STANDARD.encode(&bytes)));
     }
 
     let output = tokio::process::Command::new("curl")
@@ -65,22 +98,13 @@ pub async fn fetch_thumbnail(url: String) -> Result<String, String> {
         return Err("Failed to fetch thumbnail".to_string());
     }
 
-    use std::io::Write;
-    let mut enc = std::process::Command::new("base64")
-        .arg("--wrap=0")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|e| format!("base64 error: {e}"))?;
-
-    if let Some(stdin) = enc.stdin.as_mut() {
-        stdin.write_all(&output.stdout).ok();
+    if let Some(dir) = cache_dir.as_deref() {
+        thumb_cache::write(dir, &url, &output.stdout);
     }
-    let b64 = enc.wait_with_output().map_err(|e| e.to_string())?;
-    let b64_str = String::from_utf8_lossy(&b64.stdout);
-
-    Ok(data_url(mime_from_magic(&output.stdout), &b64_str))
+    Ok(data_url(
+        mime_from_magic(&output.stdout),
+        &STANDARD.encode(&output.stdout),
+    ))
 }
 
 #[cfg(test)]
@@ -184,8 +208,48 @@ mod tests {
         assert!(headers.iter().any(|h| h.contains("instagram.com")));
     }
 
+    #[test]
+    fn only_http_protocols_are_allowed() {
+        let args = curl_args("https://cdn/x.jpg");
+        let i = args.iter().position(|a| *a == "--proto").unwrap();
+
+        assert_eq!(args[i + 1], "=http,https");
+    }
+
+    #[tokio::test]
+    async fn a_non_web_url_is_refused() {
+        assert!(thumbnail_data_url(None, "file:///etc/passwd".to_string())
+            .await
+            .is_err());
+        assert!(thumbnail_data_url(None, "--config=x".to_string())
+            .await
+            .is_err());
+    }
+
+    #[tokio::test]
+    async fn a_cached_thumbnail_is_served_without_the_network() {
+        let dir = tempfile::tempdir().unwrap();
+        thumb_cache::write(
+            dir.path(),
+            "https://offline.invalid/a.png",
+            b"\x89PNG-bytes",
+        );
+
+        let url = thumbnail_data_url(
+            Some(dir.path().to_path_buf()),
+            "https://offline.invalid/a.png".to_string(),
+        )
+        .await
+        .unwrap();
+
+        assert!(url.starts_with("data:image/png;base64,"));
+    }
+
     #[tokio::test]
     async fn an_empty_url_is_refused_without_touching_the_network() {
-        assert_eq!(fetch_thumbnail(String::new()).await.unwrap_err(), "No URL");
+        assert_eq!(
+            thumbnail_data_url(None, String::new()).await.unwrap_err(),
+            "No URL"
+        );
     }
 }
