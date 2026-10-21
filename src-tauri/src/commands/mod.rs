@@ -8,6 +8,7 @@ pub mod fetch_thumbnail;
 pub mod install_kind;
 pub mod open_file;
 pub mod open_folder;
+#[cfg(target_os = "linux")]
 pub mod reveal;
 pub mod thumb_cache;
 pub mod update_ytdlp;

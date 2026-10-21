@@ -25,18 +25,7 @@ pub fn browsers_found(probe: impl Fn(&str) -> bool) -> Vec<String> {
 
     #[cfg(target_os = "macos")]
     {
-        // Safari est toujours présent sur macOS ; les autres navigateurs y vivent dans
-        // /Applications, pas dans le PATH.
-        for (name, app) in [
-            ("firefox", "Firefox"),
-            ("chrome", "Google Chrome"),
-            ("chromium", "Chromium"),
-        ] {
-            let bundle = format!("/Applications/{app}.app");
-            if std::path::Path::new(&bundle).exists() && !found.contains(&name.to_string()) {
-                found.push(name.to_string());
-            }
-        }
+        // Safari est toujours présent sur macOS.
         if !found.contains(&"safari".to_string()) {
             found.push("safari".to_string());
         }
@@ -51,9 +40,27 @@ pub async fn detect_installed_browsers() -> Vec<String> {
 }
 
 fn in_path(binary: &str) -> bool {
-    std::env::var_os("PATH")
+    let on_path = std::env::var_os("PATH")
         .map(|path| std::env::split_paths(&path).any(|dir| dir.join(binary).is_file()))
-        .unwrap_or(false)
+        .unwrap_or(false);
+    on_path || installed_as_mac_app(binary)
+}
+
+/// Sur macOS, les navigateurs vivent dans /Applications plutôt que dans le PATH.
+#[cfg(target_os = "macos")]
+fn installed_as_mac_app(binary: &str) -> bool {
+    let app = match binary {
+        "firefox" => "Firefox",
+        "google-chrome" => "Google Chrome",
+        "chromium" => "Chromium",
+        _ => return false,
+    };
+    std::path::Path::new(&format!("/Applications/{app}.app")).exists()
+}
+
+#[cfg(not(target_os = "macos"))]
+fn installed_as_mac_app(_binary: &str) -> bool {
+    false
 }
 
 #[cfg(test)]

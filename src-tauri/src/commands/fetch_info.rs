@@ -30,6 +30,7 @@ pub struct VideoInfoResponse {
     /// Lu pour le contrat de désérialisation, mais jamais envoyé : l'interface ne s'en sert
     /// pas et la liste dépasse souvent plusieurs centaines d'entrées.
     #[serde(default, skip_serializing)]
+    #[allow(dead_code)]
     pub formats: Vec<FormatInfo>,
 }
 
