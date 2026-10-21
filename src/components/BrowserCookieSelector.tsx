@@ -6,6 +6,7 @@ const ALL_OPTIONS: { value: CookiesBrowser; labelKey: string; browser: string | 
   { value: 'firefox', labelKey: 'Firefox', browser: 'firefox' },
   { value: 'chrome', labelKey: 'Chrome', browser: 'chrome' },
   { value: 'chromium', labelKey: 'Chromium', browser: 'chromium' },
+  { value: 'safari', labelKey: 'Safari', browser: 'safari' },
 ];
 
 interface BrowserCookieSelectorProps {
@@ -25,11 +26,11 @@ export function BrowserCookieSelector({
   const options =
     detectedBrowsers && detectedBrowsers.length > 0
       ? ALL_OPTIONS.filter((o) => o.browser === null || detectedBrowsers.includes(o.browser))
-      : ALL_OPTIONS;
+      : ALL_OPTIONS.filter((o) => o.browser !== 'safari');
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <span style={{ fontSize: '13px', fontWeight: 600, color: '#C2BCB2', flexShrink: 0 }}>{t('opt.signIn')}</span>
+      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-mid)', flexShrink: 0 }}>{t('opt.signIn')}</span>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         {options.map((opt) => {
           const active = value === opt.value;
@@ -37,6 +38,7 @@ export function BrowserCookieSelector({
             <button
               key={opt.labelKey}
               onClick={() => onChange(opt.value)}
+              aria-pressed={active}
               disabled={disabled}
               style={{
                 padding: '5px 11px',
@@ -44,8 +46,8 @@ export function BrowserCookieSelector({
                 cursor: disabled ? 'default' : 'pointer',
                 fontSize: '12.5px',
                 fontWeight: 600,
-                background: active ? '#C9F25E' : '#211F1B',
-                color: active ? '#14140C' : '#B6B0A6',
+                background: active ? 'var(--accent)' : 'var(--surface-2)',
+                color: active ? 'var(--accent-ink)' : 'var(--text-chip)',
                 border: active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.10)',
                 transition: 'all .15s',
               }}

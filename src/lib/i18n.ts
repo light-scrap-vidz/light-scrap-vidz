@@ -32,6 +32,7 @@ const dict: Record<Lang, Record<string, string>> = {
 
     // Preview
     'preview.single': 'Single video',
+    'preview.playlist': 'Playlist',
     'preview.untitledPlaylist': 'Untitled Playlist',
     'preview.videos': '{count} videos',
     'preview.selected': '{count} selected',
@@ -70,6 +71,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'dl.playlist': 'Playlist',
     'dl.download': 'Download',
     'dl.playlistMeta': 'Playlist · {count} videos',
+    'dl.another': 'Download another',
+    'dl.item': 'Item {current} of {total}',
 
     // Settings
     'set.title': 'Settings',
@@ -109,7 +112,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'err.cookiesRequired':
       'This platform requires cookies — select your browser in the Auth selector.',
     'err.curlCffi':
-      'Missing dependency (curl-cffi) — click "Update yt-dlp" in Settings to install it automatically.',
+      'Missing dependency (curl-cffi) — click "Check for updates" in Settings to install it automatically.',
     'err.ipBlocked':
       'Your IP is blocked by this platform. Try using a VPN or selecting browser cookies in the Auth selector.',
     'err.geoBlocked': 'This video is not available in your region.',
@@ -123,7 +126,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'err.cannotExtract': 'Unable to extract video — the URL may not be supported.',
     'err.rateLimited': 'Rate-limited by the platform — wait a moment and try again.',
     'err.brokenExtractor':
-      'The extractor for this platform is broken — run "Update yt-dlp" in the settings.',
+      'The extractor for this platform is broken — run "Check for updates" in the settings.',
+
+    // Singular forms, picked through Intl.PluralRules when the vars carry a `count`
+    'preview.videos.one': '{count} video',
+    'preview.selected.one': '{count} selected',
+    'preview.shown.one': '{count} video shown',
+    'dl.selectedVideo.one': 'Download {count} selected',
+    'dl.selectedAudio.one': 'Extract {count} selected',
+    'dl.playlistVideo.one': 'Download {count} video',
+    'dl.playlistAudio.one': 'Extract {count} MP3',
+    'dl.playlistMeta.one': 'Playlist · {count} video',
+    'opt.latest.one': 'Latest {count}',
+
+    // Errors raised by the app itself
+    'err.ytdlpMissing':
+      'yt-dlp was not found — open Settings and click "Check for updates" to download it.',
+    'err.spawn': 'Could not start yt-dlp — try "Check for updates" in Settings.',
+    'err.checksum': 'The yt-dlp download failed its integrity check and was discarded.',
+    'err.generic': 'The download failed.',
   },
   fr: {
     // Header
@@ -156,6 +177,7 @@ const dict: Record<Lang, Record<string, string>> = {
 
     // Preview
     'preview.single': 'Vidéo seule',
+    'preview.playlist': 'Playlist',
     'preview.untitledPlaylist': 'Playlist sans titre',
     'preview.videos': '{count} vidéos',
     'preview.selected': '{count} sélectionnées',
@@ -194,6 +216,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'dl.playlist': 'Playlist',
     'dl.download': 'Téléchargement',
     'dl.playlistMeta': 'Playlist · {count} vidéos',
+    'dl.another': 'Télécharger une autre vidéo',
+    'dl.item': 'Élément {current} sur {total}',
 
     // Settings
     'set.title': 'Réglages',
@@ -233,7 +257,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'err.cookiesRequired':
       'Cette plateforme exige des cookies — sélectionnez votre navigateur dans le sélecteur Connexion.',
     'err.curlCffi':
-      'Dépendance manquante (curl-cffi) — cliquez sur « Mettre à jour yt-dlp » dans les réglages pour l’installer automatiquement.',
+      'Dépendance manquante (curl-cffi) — cliquez sur « Rechercher les mises à jour » dans les réglages pour l’installer automatiquement.',
     'err.ipBlocked':
       'Votre adresse IP est bloquée par cette plateforme. Essayez un VPN, ou sélectionnez les cookies de votre navigateur dans le sélecteur Connexion.',
     'err.geoBlocked': "Cette vidéo n'est pas disponible dans votre région.",
@@ -248,7 +272,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'err.cannotExtract': "Extraction impossible — l'URL n'est peut-être pas prise en charge.",
     'err.rateLimited': 'Trop de requêtes pour la plateforme — patientez un instant et réessayez.',
     'err.brokenExtractor':
-      'L’extracteur de cette plateforme est cassé — lancez « Mettre à jour yt-dlp » dans les réglages.',
+      'L’extracteur de cette plateforme est cassé — lancez « Rechercher les mises à jour » dans les réglages.',
+
+    // Formes au singulier, choisies via Intl.PluralRules quand les variables portent `count`
+    'preview.videos.one': '{count} vidéo',
+    'preview.selected.one': '{count} sélectionnée',
+    'preview.shown.one': '{count} vidéo affichée',
+    'dl.selectedVideo.one': 'Télécharger {count} sélectionnée',
+    'dl.selectedAudio.one': 'Extraire {count} sélectionnée',
+    'dl.playlistVideo.one': 'Télécharger {count} vidéo',
+    'dl.playlistAudio.one': 'Extraire {count} MP3',
+    'dl.playlistMeta.one': 'Playlist · {count} vidéo',
+    'opt.latest.one': '{count} dernière',
+
+    // Erreurs levées par l'app elle-même
+    'err.ytdlpMissing':
+      'yt-dlp est introuvable — ouvrez les réglages et cliquez sur « Rechercher les mises à jour » pour le télécharger.',
+    'err.spawn': 'Impossible de lancer yt-dlp — essayez « Rechercher les mises à jour » dans les réglages.',
+    'err.checksum': 'Le téléchargement de yt-dlp a échoué au contrôle d’intégrité et a été écarté.',
+    'err.generic': 'Le téléchargement a échoué.',
   },
 };
 
@@ -264,9 +306,13 @@ export function keysOf(lang: Lang): string[] {
 }
 
 export function getT(lang: Lang) {
+  const plural = new Intl.PluralRules(lang);
   return (key: string, vars?: Record<string, string | number>): string => {
-    let s = dict[lang][key] ?? dict.en[key] ?? key;
-    if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
+    // With a numeric `count`, prefer the grammatical form ("1 video" vs "2 videos").
+    const form = typeof vars?.count === 'number' ? `${key}.${plural.select(vars.count)}` : null;
+    let s =
+      (form && (dict[lang][form] ?? dict.en[form])) || (dict[lang][key] ?? dict.en[key] ?? key);
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
     return s;
   };
 }

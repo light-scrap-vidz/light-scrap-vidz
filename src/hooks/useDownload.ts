@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
-import { v4 as uuidv4 } from 'uuid';
+import { newId } from '@/lib/utils';
 import { startDownload, cancelDownload } from '@/lib/tauri-commands';
 import { parseYtdlpError } from '@/lib/error-parser';
+import { EVENT_COMPLETE, EVENT_ERROR, EVENT_PROGRESS } from '@/lib/events';
 import type {
   CookiesBrowser,
   DownloadStatus,
@@ -17,6 +18,7 @@ import type {
 import { getPlatform } from '@/lib/url-validator';
 import { useHistory } from './useHistory';
 import { useT } from '@/lib/locale';
+import { loadNotify } from '@/lib/notify';
 
 interface DownloadContext {
   url: string;
@@ -94,7 +96,7 @@ export function useDownload(): UseDownloadReturn {
       audioOnly: boolean,
     ) => {
       cleanup();
-      const id = uuidv4();
+      const id = newId();
       downloadIdRef.current = id;
       currentContextRef.current = {
         url,
@@ -110,18 +112,18 @@ export function useDownload(): UseDownloadReturn {
       setError(null);
       setCompletedPath(null);
 
-      const unlistenProgress = await listen<DownloadProgress>('download://progress', (event) => {
+      const unlistenProgress = await listen<DownloadProgress>(EVENT_PROGRESS, (event) => {
         if (event.payload.download_id === id) {
           setProgress(event.payload);
         }
       });
 
-      const unlistenComplete = await listen<DownloadComplete>('download://complete', (event) => {
+      const unlistenComplete = await listen<DownloadComplete>(EVENT_COMPLETE, (event) => {
         if (event.payload.download_id === id) {
           setStatus('complete');
           setCompletedPath(event.payload.filepath);
           cleanup();
-          void sendDesktopNotification(event.payload.filepath, t('dl.complete'));
+          if (loadNotify()) void sendDesktopNotification(event.payload.filepath, t('dl.complete'));
 
           if (currentContextRef.current) {
             const ctx = currentContextRef.current;
@@ -157,7 +159,7 @@ export function useDownload(): UseDownloadReturn {
       });
 
       const unlistenError = await listen<{ download_id: string; message: string }>(
-        'download://error',
+        EVENT_ERROR,
         (event) => {
           if (event.payload.download_id === id) {
             setStatus('error');

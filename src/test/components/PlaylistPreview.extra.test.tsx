@@ -121,17 +121,6 @@ describe('PlaylistPreview — entry list', () => {
     expect(screen.queryByText('YouTube')).not.toBeInTheDocument();
   });
 
-  it('tints a row on hover and clears it on leave', () => {
-    setup();
-    const row = screen.getByText('First').closest('label')!;
-
-    fireEvent.mouseEnter(row);
-    expect(row).toHaveStyle({ background: 'rgba(255, 255, 255, 0.04)' });
-
-    fireEvent.mouseLeave(row);
-    expect(row).toHaveStyle({ background: 'transparent' });
-  });
-
   it('leaves a selected row tinted on hover', () => {
     setup({ selectedUrls: ['https://youtu.be/a'] });
     const row = screen.getByText('First').closest('label')!;

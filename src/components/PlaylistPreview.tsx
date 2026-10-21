@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import { PLATFORM_META, PLATFORM_TINT } from '@/lib/platform';
 import { getPlatform } from '@/lib/url-validator';
 import type { PlaylistInfo } from '@/types';
 import { useT } from '@/lib/locale';
+import { PlatformBadge } from './PlatformBadge';
+import { ThumbPlaceholder } from './ThumbPlaceholder';
 
 interface PlaylistPreviewProps {
   info: PlaylistInfo;
@@ -15,8 +16,6 @@ interface PlaylistPreviewProps {
 export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, disabled }: PlaylistPreviewProps) {
   const t = useT();
   const platform = getPlatform(url);
-  const meta = PLATFORM_META[platform] ?? PLATFORM_META['unknown'];
-  const tint = PLATFORM_TINT[platform] ?? PLATFORM_TINT['unknown'];
   const count = info.playlist_count ?? (info.entries?.length || null);
   const entries = useMemo(() => info.entries ?? [], [info.entries]);
   const selectedSet = useMemo(() => new Set(selectedUrls), [selectedUrls]);
@@ -48,7 +47,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
   return (
     <div
       style={{
-        background: '#1A1916',
+        background: 'var(--surface)',
         border: '1px solid rgba(255,255,255,0.07)',
         borderRadius: 14,
         overflow: 'hidden',
@@ -65,34 +64,17 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
             height: 64,
             borderRadius: 9,
             overflow: 'hidden',
-            background: 'repeating-linear-gradient(135deg, #211F1A 0 7px, #1A1815 7px 14px)',
           }}
         >
-          <div style={{ position: 'absolute', inset: 0, background: tint, opacity: 0.12 }} />
+          <ThumbPlaceholder platform={platform} />
         </div>
 
         {/* Info column */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '2px 8px',
-                borderRadius: 999,
-                fontSize: '10px',
-                fontWeight: 700,
-                color: meta.color,
-                background: meta.bgColor,
-                border: `1px solid ${meta.borderColor}`,
-              }}
-            >
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: tint }} />
-              {meta.label}
-            </span>
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#857F75' }}>
-              Playlist
+            <PlatformBadge platform={platform} />
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+              {t('preview.playlist')}
             </span>
           </div>
 
@@ -101,7 +83,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
               margin: 0,
               fontSize: '14px',
               fontWeight: 700,
-              color: '#F1EDE6',
+              color: 'var(--text-strong)',
               letterSpacing: '-0.01em',
               lineHeight: 1.25,
               display: '-webkit-box',
@@ -113,7 +95,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
             {info.title || t('preview.untitledPlaylist')}
           </h3>
 
-          <div style={{ fontSize: '12px', fontFamily: "'JetBrains Mono', monospace", color: '#857F75' }}>
+          <div style={{ fontSize: '12px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
             {[info.uploader, count != null ? t('preview.videos', { count }) : null].filter(Boolean).join(' · ')}
           </div>
         </div>
@@ -124,7 +106,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 15px 13px' }}>
           {/* Row header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6F6960' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)' }}>
               {selectedUrls.length > 0
                 ? t('preview.selected', { count: selectedUrls.length })
                 : t('preview.shown', { count: entries.length })}
@@ -138,7 +120,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
                   borderRadius: 6,
                   border: '1px solid rgba(255,255,255,0.10)',
                   background: 'transparent',
-                  color: '#C2BCB2',
+                  color: 'var(--text-mid)',
                   fontSize: '11.5px',
                   fontWeight: 600,
                   cursor: disabled ? 'default' : 'pointer',
@@ -157,6 +139,9 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
               return (
                 <label
                   key={entry.id || i}
+                  className="lsv-hover-fill"
+                  data-checked={checked}
+                  data-disabled={!!disabled}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -167,8 +152,6 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
                     background: checked ? 'rgba(201,242,94,0.06)' : 'transparent',
                     transition: 'background .1s',
                   }}
-                  onMouseEnter={(e) => { if (!disabled && !checked) (e.currentTarget as HTMLLabelElement).style.background = 'rgba(255,255,255,0.04)'; }}
-                  onMouseLeave={(e) => { if (!checked) (e.currentTarget as HTMLLabelElement).style.background = 'transparent'; }}
                 >
                   <input
                     type="checkbox"
@@ -176,7 +159,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
                     onChange={() => toggleEntry(entry.url)}
                     disabled={disabled}
                     style={{
-                      accentColor: '#C9F25E',
+                      accentColor: 'var(--accent)',
                       width: 14,
                       height: 14,
                       flexShrink: 0,
@@ -186,7 +169,7 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
                   <span
                     style={{
                       fontSize: '12.5px',
-                      color: checked ? '#D6D1C8' : '#9A9490',
+                      color: checked ? 'var(--text-soft)' : '#9A9490',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',

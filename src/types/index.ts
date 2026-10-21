@@ -9,7 +9,7 @@ export type Platform =
   | 'vimeo'
   | 'unknown';
 
-export type CookiesBrowser = 'firefox' | 'chrome' | 'chromium' | null;
+export type CookiesBrowser = 'firefox' | 'chrome' | 'chromium' | 'safari' | null;
 
 export type Quality = 'best' | '1080p' | '720p' | '480p';
 
@@ -41,7 +41,8 @@ export interface VideoInfo {
   uploader: string;
   webpage_url: string;
   extractor: string;
-  formats: VideoFormat[];
+  /** Not sent by the backend any more; kept optional for older fixtures. */
+  formats?: VideoFormat[];
 }
 
 export interface PlaylistEntry {

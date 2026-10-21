@@ -118,14 +118,9 @@ describe('UrlInput — supported platform chips', () => {
 });
 
 describe('UrlInput — focus ring', () => {
-  it('highlights the field while focused', () => {
+  it('takes its focus highlight from the shared CSS class', () => {
     render(<UrlInput onSubmit={vi.fn()} isLoading={false} />);
 
-    fireEvent.focus(input());
-    const focusedBorder = input().parentElement?.style.borderColor;
-
-    fireEvent.blur(input());
-
-    expect(focusedBorder).not.toBe(input().parentElement?.style.borderColor);
+    expect(input().parentElement).toHaveClass('lsv-field');
   });
 });

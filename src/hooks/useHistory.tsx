@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { createContext, createElement, useCallback, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { HistoryEntry } from '@/types';
 
 const STORAGE_KEY = 'light-scrap-vidz:history';
@@ -23,7 +24,11 @@ function loadHistory(): HistoryEntry[] {
 }
 
 function saveHistory(entries: HistoryEntry[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // storage full or unavailable: keep the in-memory history
+  }
 }
 
 interface UseHistoryReturn {
@@ -32,7 +37,7 @@ interface UseHistoryReturn {
   clearHistory: () => void;
 }
 
-export function useHistory(): UseHistoryReturn {
+function useHistoryState(): UseHistoryReturn {
   const [entries, setEntries] = useState<HistoryEntry[]>(loadHistory);
 
   const addEntry = useCallback((entry: HistoryEntry) => {
@@ -49,4 +54,18 @@ export function useHistory(): UseHistoryReturn {
   }, []);
 
   return { entries, addEntry, clearHistory };
+}
+
+const HistoryContext = createContext<UseHistoryReturn | null>(null);
+
+/** One history shared by everything that reads or writes it: the download view, the queue
+ * and the "Recent" tab. Separate instances each kept their own copy and drifted apart. */
+export function HistoryProvider({ children }: { children: ReactNode }) {
+  return createElement(HistoryContext.Provider, { value: useHistoryState() }, children);
+}
+
+/** The shared history; a standalone one outside a provider (tests, isolated hooks). */
+export function useHistory(): UseHistoryReturn {
+  const standalone = useHistoryState();
+  return useContext(HistoryContext) ?? standalone;
 }

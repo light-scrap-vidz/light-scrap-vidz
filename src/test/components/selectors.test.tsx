@@ -95,12 +95,8 @@ describe('BrowserCookieSelector', () => {
 
   it('highlights the active choice', () => {
     render(<BrowserCookieSelector value="firefox" onChange={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Firefox' })).toHaveStyle({
-      background: '#C9F25E',
-    });
-    expect(screen.getByRole('button', { name: 'Chrome' })).toHaveStyle({
-      background: '#211F1B',
-    });
+    expect(screen.getByRole('button', { name: 'Firefox' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Chrome' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('disables every choice at once', () => {
@@ -153,17 +149,6 @@ describe('FolderPicker', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('tints on hover and restores the colour on leave', () => {
-    render(<FolderPicker value="/home/me" onChange={vi.fn()} />);
-    const button = screen.getByLabelText('Choose output folder');
-
-    fireEvent.mouseEnter(button);
-    expect(button).toHaveStyle({ color: '#C9F25E' });
-
-    fireEvent.mouseLeave(button);
-    expect(button).toHaveStyle({ color: '#D6D1C8' });
-  });
-
   it('does not tint on hover while disabled', () => {
     render(<FolderPicker value="" onChange={vi.fn()} disabled />);
     const button = screen.getByLabelText('Choose output folder');
@@ -213,17 +198,6 @@ describe('DownloadButton', () => {
 
     expect(onDownload).not.toHaveBeenCalled();
     expect(button).toHaveStyle({ opacity: '0.5' });
-  });
-
-  it('lifts on hover and settles back on leave', () => {
-    render(<DownloadButton onDownload={vi.fn()} />);
-    const button = screen.getByRole('button');
-
-    fireEvent.mouseEnter(button);
-    expect(button).toHaveStyle({ transform: 'translateY(-1px)' });
-
-    fireEvent.mouseLeave(button);
-    expect(button).toHaveStyle({ transform: 'none' });
   });
 
   it('stays still on hover while disabled', () => {

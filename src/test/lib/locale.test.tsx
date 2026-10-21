@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getVersion } from '@tauri-apps/api/app';
 import { getT, keysOf, LANGUAGES } from '@/lib/i18n';
 import { LangProvider, loadLang, saveLang, useLang, useT } from '@/lib/locale';
-import { SettingsButton } from '@/components/SettingsButton';
+import { SettingsSheet } from '@/components/SettingsSheet';
 import { UrlInput } from '@/components/UrlInput';
 
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn() }));
@@ -147,7 +147,7 @@ describe('the language control in the settings panel', () => {
   async function openSettings() {
     const view = render(
       <LangProvider>
-        <SettingsButton
+        <SettingsSheet
           open
           onClose={() => {}}
           outputDir="/home/me/Videos"
@@ -201,5 +201,29 @@ describe('the language control in the settings panel', () => {
     await openSettings();
 
     expect(await screen.findByText('v0.2.15')).toBeInTheDocument();
+  });
+});
+
+describe('plural forms', () => {
+  it('uses the singular for one item and the plural otherwise (English)', () => {
+    const t = getT('en');
+    expect(t('preview.videos', { count: 1 })).toBe('1 video');
+    expect(t('preview.videos', { count: 2 })).toBe('2 videos');
+    expect(t('preview.videos', { count: 0 })).toBe('0 videos');
+  });
+
+  it('treats zero as singular in French', () => {
+    const t = getT('fr');
+    expect(t('preview.videos', { count: 0 })).toBe('0 vidéo');
+    expect(t('preview.videos', { count: 1 })).toBe('1 vidéo');
+    expect(t('preview.videos', { count: 5 })).toBe('5 vidéos');
+  });
+
+  it('ignores the plural machinery when there is no numeric count', () => {
+    expect(getT('en')('preview.videos', { count: 'many' })).toBe('many videos');
+  });
+
+  it('replaces every occurrence of a placeholder', () => {
+    expect(getT('en')('{a}-{a}', { a: 'x' })).toBe('x-x');
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import { HistoryList } from '@/components/HistoryList';
@@ -40,13 +40,13 @@ describe('HistoryList — empty state', () => {
 
 describe('HistoryList — relative times', () => {
   it.each([
-    [0, 'just now'],
-    [30_000, 'just now'],
-    [5 * 60_000, '5m ago'],
-    [59 * 60_000, '59m ago'],
-    [2 * 3_600_000, '2h ago'],
-    [23 * 3_600_000, '23h ago'],
-    [3 * 86_400_000, '3d ago'],
+    [0, 'now'],
+    [30_000, 'now'],
+    [5 * 60_000, '5 minutes ago'],
+    [59 * 60_000, '59 minutes ago'],
+    [2 * 3_600_000, '2 hours ago'],
+    [23 * 3_600_000, '23 hours ago'],
+    [3 * 86_400_000, '3 days ago'],
   ])('renders an age of %ims as "%s"', (age, expected) => {
     render(<HistoryList entries={[entry({ downloaded_at: NOW - age })]} onClear={vi.fn()} />);
     expect(screen.getByText(expected)).toBeInTheDocument();
@@ -136,20 +136,35 @@ describe('HistoryList — selecting an entry', () => {
 });
 
 describe('HistoryList — thumbnails', () => {
-  it('shows the stored thumbnail', () => {
+  it('shows the proxied copy of the stored thumbnail, never the remote URL', async () => {
+    mockInvoke.mockResolvedValue('data:image/png;base64,PROXIED');
     render(<HistoryList entries={[entry()]} onClear={vi.fn()} />);
-    expect(screen.getByAltText('A clip')).toHaveAttribute('src', 'https://img/thumb.jpg');
+
+    // Nothing is requested from the remote host by the webview while the proxy works.
+    expect(screen.queryByAltText('A clip')).not.toBeInTheDocument();
+    expect(await screen.findByAltText('A clip')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,PROXIED',
+    );
+    expect(mockInvoke).toHaveBeenCalledWith('fetch_thumbnail', { url: 'https://img/thumb.jpg' });
   });
 
-  it('falls back to a striped placeholder when the image fails', () => {
+  it('keeps the placeholder when the proxy cannot fetch the thumbnail', async () => {
+    mockInvoke.mockRejectedValue(new Error('offline'));
     render(<HistoryList entries={[entry()]} onClear={vi.fn()} />);
-    const img = screen.getByAltText('A clip');
 
-    fireEvent.error(img);
+    await waitFor(() => expect(mockInvoke).toHaveBeenCalled());
 
-    expect(img).toHaveStyle({ display: 'none' });
-    expect(img.parentElement?.style.background).toContain('repeating-linear-gradient');
-    expect(img.parentElement?.querySelectorAll('div')).toHaveLength(1);
+    expect(screen.queryByAltText('A clip')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the placeholder when the proxied image fails to load', async () => {
+    mockInvoke.mockResolvedValue('data:image/png;base64,BROKEN');
+    render(<HistoryList entries={[entry()]} onClear={vi.fn()} />);
+
+    fireEvent.error(await screen.findByAltText('A clip'));
+
+    expect(screen.queryByAltText('A clip')).not.toBeInTheDocument();
   });
 
   it('renders the placeholder directly when there is no thumbnail', () => {

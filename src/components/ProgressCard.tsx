@@ -26,23 +26,23 @@ export function ProgressCard({ status, progress }: ProgressCardProps) {
               fontSize: '52px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 600,
-              color: '#F1EDE6',
+              color: 'var(--text-strong)',
               letterSpacing: '-0.03em',
               lineHeight: 1,
             }}
           >
             {percent.toFixed(0)}
           </span>
-          <span style={{ fontSize: '22px', fontWeight: 600, color: '#6F6960', marginLeft: 2 }}>%</span>
+          <span style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-dim)', marginLeft: 2 }}>%</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
           {speed && (
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#C9F25E', fontFamily: "'JetBrains Mono', monospace" }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--accent)', fontFamily: "'JetBrains Mono', monospace" }}>
               {speed}
             </span>
           )}
           {eta && (
-            <span style={{ fontSize: '11.5px', color: '#6F6960', fontFamily: "'JetBrains Mono', monospace" }}>
+            <span style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontFamily: "'JetBrains Mono', monospace" }}>
               {t('dl.eta')} {eta}
             </span>
           )}
@@ -63,13 +63,19 @@ export function ProgressCard({ status, progress }: ProgressCardProps) {
         />
       </div>
 
+      {progress?.current_item != null && progress.total_items != null && (
+        <span style={{ fontSize: '11.5px', color: 'var(--text-hover)', fontFamily: "'JetBrains Mono', monospace" }}>
+          {t('dl.item', { current: progress.current_item, total: progress.total_items })}
+        </span>
+      )}
+
       {/* Filename */}
       {progress?.filename && (
         <span
           style={{
             fontSize: '11.5px',
             fontFamily: "'JetBrains Mono', monospace",
-            color: '#6F6960',
+            color: 'var(--text-dim)',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',

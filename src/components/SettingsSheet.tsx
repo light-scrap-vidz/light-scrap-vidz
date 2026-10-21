@@ -1,13 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { check } from '@tauri-apps/plugin-updater';
+import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { BrowserCookieSelector } from '@/components/BrowserCookieSelector';
-import { getInstallKind, downloadDebUpdate, installDebUpdate, updateYtDlp } from '@/lib/tauri-commands';
+import { Spinner } from '@/components/Spinner';
+import { getInstallKind, updateYtDlp } from '@/lib/tauri-commands';
 import type { CookiesBrowser } from '@/types';
+import type { InstallKind } from '@/lib/tauri-commands';
 import { useLang, useT } from '@/lib/locale';
 import type { Lang } from '@/lib/i18n';
+import { loadNotify, saveNotify } from '@/lib/notify';
 
 interface SettingsSheetProps {
   open: boolean;
@@ -19,6 +23,8 @@ interface SettingsSheetProps {
   detectedBrowsers: string[];
 }
 
+const RELEASES_URL = 'https://github.com/light-scrap-vidz/light-scrap-vidz/releases/latest';
+
 type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'up-to-date' | 'error';
 
 const sectionLabelStyle: React.CSSProperties = {
@@ -26,19 +32,19 @@ const sectionLabelStyle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-  color: '#6F6960',
+  color: 'var(--text-dim)',
   marginTop: 14,
   marginBottom: 2,
 };
 
 const cardStyle: React.CSSProperties = {
-  background: '#1A1916',
+  background: 'var(--surface)',
   borderRadius: 11,
   border: '1px solid rgba(255,255,255,0.06)',
   padding: 13,
 };
 
-export function SettingsButton({
+export function SettingsSheet({
   open: isOpen,
   onClose,
   outputDir,
@@ -49,9 +55,10 @@ export function SettingsButton({
 }: SettingsSheetProps) {
   const t = useT();
   const { lang, setLang } = useLang();
-  const [notif, setNotif] = useState(true);
+  const [notif, setNotif] = useState(loadNotify);
   const [version, setVersion] = useState('');
-  const [installKind, setInstallKind] = useState<'appimage' | 'deb' | null>(null);
+  const [installKind, setInstallKind] = useState<InstallKind | null>(null);
+  const pendingUpdate = useRef<Update | null>(null);
   const [updateState, setUpdateState] = useState<UpdateState>('idle');
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
@@ -70,31 +77,38 @@ export function SettingsButton({
     setUpdateError(null);
     setUpdateVersion(null);
     setYtdlpStatus('updating');
+    // yt-dlp refreshes in the background; it does not hold up the app update check.
+    void updateYtDlp()
+      .then(() => setYtdlpStatus('updated'))
+      .catch(() => setYtdlpStatus('failed'));
     try {
-      // Update yt-dlp silently while checking for app update
-      await updateYtDlp()
-        .then(() => setYtdlpStatus('updated'))
-        .catch(() => setYtdlpStatus('failed'));
-
       const update = await check();
       if (!update?.available) {
         setUpdateState('up-to-date');
         return;
       }
+      pendingUpdate.current = update;
       setUpdateVersion(update.version);
+      setUpdateState('available');
+    } catch (e) {
+      setUpdateState('error');
+      setUpdateError(e instanceof Error ? e.message : String(e));
+    }
+  }, []);
 
-      // deb: download .deb then pkexec dpkg -i (shows system password dialog)
-      if (installKind !== 'appimage') {
-        setUpdateState('downloading');
-        setDownloadProgress(0);
-        await downloadDebUpdate(update.version);
-        setUpdateState('installing');
-        await installDebUpdate(update.version);
-        await relaunch();
+  // Second step, after the user saw the version and confirmed by clicking again.
+  const handleInstallUpdate = useCallback(async () => {
+    const update = pendingUpdate.current;
+    if (!update) return;
+    setUpdateError(null);
+    try {
+      // deb/rpm: no signed in-app update path, so send the user to the release page
+      if (installKind === 'deb' || installKind === 'rpm') {
+        await openUrl(RELEASES_URL);
         return;
       }
 
-      // AppImage: download and install in-place
+      // macOS app bundle and AppImage: download and install in place
       setUpdateState('downloading');
       setDownloadProgress(0);
       let downloaded = 0;
@@ -142,6 +156,15 @@ export function SettingsButton({
 
   const isUpdating = updateState === 'checking' || updateState === 'downloading' || updateState === 'installing';
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -174,13 +197,13 @@ export function SettingsButton({
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#F1EDE6' }}>{t('set.title')}</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-strong)' }}>{t('set.title')}</span>
           <button
             onClick={onClose}
             aria-label={t('set.close')}
             style={{
-              width: 30, height: 30, borderRadius: 8, background: '#211F1B', border: 'none',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A39D93',
+              width: 30, height: 30, borderRadius: 8, background: 'var(--surface-2)', border: 'none',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-hover)',
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -193,16 +216,15 @@ export function SettingsButton({
         <div style={sectionLabelStyle}>{t('set.downloads')}</div>
 
         <div style={cardStyle}>
-          <div style={{ fontSize: '12px', color: '#857F75', marginBottom: 8 }}>{t('set.defaultFolder')}</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 8 }}>{t('set.defaultFolder')}</div>
           <button
             onClick={handlePickFolder}
+            className="lsv-hover-accent"
             style={{
               display: 'flex', alignItems: 'center', gap: 8, width: '100%',
               background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
-              color: outputDir ? '#D6D1C8' : '#6F6960', transition: 'all .15s',
+              color: outputDir ? 'var(--text-soft)' : 'var(--text-dim)', transition: 'all .15s',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#C9F25E'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = outputDir ? '#D6D1C8' : '#6F6960'; }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
@@ -215,21 +237,26 @@ export function SettingsButton({
 
         <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#D6D1C8' }}>{t('set.notify')}</div>
-            <div style={{ fontSize: '11px', color: '#6F6960', marginTop: 2 }}>{t('set.notifySub')}</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-soft)' }}>{t('set.notify')}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: 2 }}>{t('set.notifySub')}</div>
           </div>
           <button
-            onClick={() => setNotif((v) => !v)}
+            onClick={() => {
+              setNotif(!notif);
+              saveNotify(!notif);
+            }}
+            role="switch"
+            aria-checked={notif}
             aria-label={t('set.notifyAria')}
             style={{
               width: 42, height: 24, borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: notif ? '#C9F25E' : '#211F1B', position: 'relative', transition: 'all .15s', flexShrink: 0,
+              background: notif ? 'var(--accent)' : 'var(--surface-2)', position: 'relative', transition: 'all .15s', flexShrink: 0,
             }}
           >
             <span style={{
               position: 'absolute', top: 3, left: notif ? 21 : 3,
               width: 18, height: 18, borderRadius: '50%',
-              background: notif ? '#14140C' : '#857F75', transition: 'all .15s',
+              background: notif ? 'var(--accent-ink)' : 'var(--text-muted)', transition: 'all .15s',
             }} />
           </button>
         </div>
@@ -238,7 +265,7 @@ export function SettingsButton({
         <div style={sectionLabelStyle}>{t('set.auth')}</div>
 
         <div style={cardStyle}>
-          <div style={{ fontSize: '12px', color: '#857F75', marginBottom: 9 }}>{t('set.authSub')}</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 9 }}>{t('set.authSub')}</div>
           <BrowserCookieSelector
             value={cookiesBrowser}
             onChange={onCookiesBrowserChange}
@@ -260,14 +287,15 @@ export function SettingsButton({
                 <button
                   key={opt.value}
                   onClick={() => setLang(opt.value)}
+                  aria-pressed={active}
                   style={{
                     padding: '5px 11px',
                     borderRadius: 8,
                     cursor: 'pointer',
                     fontSize: '12.5px',
                     fontWeight: 600,
-                    background: active ? '#C9F25E' : '#211F1B',
-                    color: active ? '#14140C' : '#B6B0A6',
+                    background: active ? 'var(--accent)' : 'var(--surface-2)',
+                    color: active ? 'var(--accent-ink)' : 'var(--text-chip)',
                     border: active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.10)',
                     transition: 'all .15s',
                   }}
@@ -286,16 +314,16 @@ export function SettingsButton({
           {/* App identity */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: 9, background: '#C9F25E',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#14140C', flexShrink: 0,
+              width: 32, height: 32, borderRadius: 9, background: 'var(--accent)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-ink)', flexShrink: 0,
             }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" />
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#F1EDE6' }}>light-scrap-vidz</div>
-              <div style={{ fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace", color: '#6F6960', marginTop: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-strong)' }}>light-scrap-vidz</div>
+              <div style={{ fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-dim)', marginTop: 1 }}>
                 {version ? `v${version}` : '…'}
               </div>
             </div>
@@ -306,15 +334,19 @@ export function SettingsButton({
 
           {/* Update button */}
           <button
-            onClick={() => { if (!isUpdating) void handleCheckUpdate(); }}
+            onClick={() => {
+              if (isUpdating) return;
+              void (updateState === 'available' ? handleInstallUpdate() : handleCheckUpdate());
+            }}
             disabled={isUpdating}
+            className="lsv-hover-outline"
             style={{
               width: '100%',
               height: 38,
               borderRadius: 9,
               border: `1px solid ${updateState === 'up-to-date' ? 'rgba(201,242,94,0.25)' : updateState === 'error' ? 'rgba(255,138,138,0.25)' : 'rgba(255,255,255,0.10)'}`,
-              background: isUpdating ? 'rgba(201,242,94,0.06)' : '#211F1B',
-              color: updateState === 'up-to-date' ? '#C9F25E' : updateState === 'error' ? '#FF8A8A' : '#D6D1C8',
+              background: isUpdating ? 'rgba(201,242,94,0.06)' : 'var(--surface-2)',
+              color: updateState === 'up-to-date' ? 'var(--accent)' : updateState === 'error' ? 'var(--danger)' : 'var(--text-soft)',
               fontSize: '13px',
               fontWeight: 600,
               cursor: isUpdating ? 'default' : 'pointer',
@@ -326,8 +358,6 @@ export function SettingsButton({
               position: 'relative',
               overflow: 'hidden',
             }}
-            onMouseEnter={(e) => { if (!isUpdating) (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.20)'; }}
-            onMouseLeave={(e) => { if (!isUpdating) (e.currentTarget as HTMLButtonElement).style.borderColor = updateState === 'error' ? 'rgba(255,138,138,0.25)' : 'rgba(255,255,255,0.10)'; }}
           >
             {/* Download progress bar */}
             {updateState === 'downloading' && downloadProgress > 0 && (
@@ -340,15 +370,7 @@ export function SettingsButton({
             )}
 
             {isUpdating ? (
-              <span
-                className="lsv-spin"
-                style={{
-                  width: 14, height: 14, borderRadius: '50%',
-                  border: '2px solid rgba(201,242,94,0.3)',
-                  borderTopColor: '#C9F25E',
-                  display: 'inline-block', flexShrink: 0,
-                }}
-              />
+              <Spinner size={14} thickness={2} />
             ) : updateState === 'up-to-date' ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
@@ -367,7 +389,7 @@ export function SettingsButton({
           {ytdlpStatus !== 'idle' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
               {ytdlpStatus === 'updating' && (
-                <span className="lsv-spin" style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid rgba(201,242,94,0.3)', borderTopColor: '#C9F25E', display: 'inline-block', flexShrink: 0 }} />
+                <Spinner size={10} thickness={1.5} />
               )}
               {ytdlpStatus === 'updated' && (
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C9F25E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
@@ -375,7 +397,7 @@ export function SettingsButton({
               {ytdlpStatus === 'failed' && (
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF8A8A" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
               )}
-              <span style={{ fontSize: '11px', color: ytdlpStatus === 'failed' ? '#FF8A8A' : '#6F6960' }}>
+              <span style={{ fontSize: '11px', color: ytdlpStatus === 'failed' ? 'var(--danger)' : 'var(--text-dim)' }}>
                 {ytdlpStatus === 'updating' && t('ytdlp.updating')}
                 {ytdlpStatus === 'updated' && t('ytdlp.updated')}
                 {ytdlpStatus === 'failed' && t('ytdlp.failed')}
@@ -385,7 +407,7 @@ export function SettingsButton({
 
           {/* Error message */}
           {updateState === 'error' && updateError && (
-            <div style={{ fontSize: '11px', color: '#FF8A8A', marginTop: 8, lineHeight: 1.4 }}>
+            <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: 8, lineHeight: 1.4 }}>
               {updateError}
             </div>
           )}

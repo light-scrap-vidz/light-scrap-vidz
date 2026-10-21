@@ -17,16 +17,16 @@ export function PlaylistEndSelector({ value, onChange, disabled }: PlaylistEndSe
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <span style={{ fontSize: '13px', fontWeight: 600, color: '#C2BCB2', flexShrink: 0 }}>{t('opt.count')}</span>
+      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-mid)', flexShrink: 0 }}>{t('opt.count')}</span>
       <select
         value={String(value)}
         onChange={(e) => onChange(Number(e.target.value))}
         disabled={disabled}
         aria-label={t('opt.countAria')}
         style={{
-          background: '#211F1B',
+          background: 'var(--surface-2)',
           border: '1px solid rgba(255,255,255,0.10)',
-          color: '#D6D1C8',
+          color: 'var(--text-soft)',
           borderRadius: 8,
           fontSize: '12.5px',
           fontWeight: 600,
@@ -36,7 +36,7 @@ export function PlaylistEndSelector({ value, onChange, disabled }: PlaylistEndSe
         }}
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value} style={{ background: '#1A1916' }}>
+          <option key={opt.value} value={opt.value} style={{ background: 'var(--surface)' }}>
             {opt.label}
           </option>
         ))}

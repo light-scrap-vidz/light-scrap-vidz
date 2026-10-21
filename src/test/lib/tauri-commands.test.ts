@@ -73,8 +73,6 @@ describe('tauri-commands — argument shape', () => {
     ['openFolder', () => commands.openFolder('/out'), 'open_folder', { path: '/out' }],
     ['openFile', () => commands.openFile('/out/f.mp4'), 'open_file', { path: '/out/f.mp4' }],
     ['fetchThumbnail', () => commands.fetchThumbnail('https://img'), 'fetch_thumbnail', { url: 'https://img' }],
-    ['downloadDebUpdate', () => commands.downloadDebUpdate('1.2.3'), 'download_deb_update', { version: '1.2.3' }],
-    ['installDebUpdate', () => commands.installDebUpdate('1.2.3'), 'install_deb_update', { version: '1.2.3' }],
   ])('%s passes its payload through', async (_name, call, command, payload) => {
     await call();
     expect(mockInvoke).toHaveBeenCalledWith(command, payload);

@@ -109,3 +109,15 @@ describe('parseYtdlpError — fallback with no ERROR line at all', () => {
     expect(parseYtdlpError('')).toBe('');
   });
 });
+
+describe('errors raised by the app itself', () => {
+  it.each([
+    ['yt-dlp not found. Open Settings…', 'err.ytdlpMissing'],
+    ['Failed to spawn yt-dlp: permission denied', 'err.spawn'],
+    ['Failed to run yt-dlp: no such file', 'err.spawn'],
+    ['Checksum mismatch: the downloaded yt-dlp was discarded', 'err.checksum'],
+    ['yt-dlp exited with an error', 'err.generic'],
+  ])('maps %s to a translation key', (raw, key) => {
+    expect(parseYtdlpError(raw)).toBe(key);
+  });
+});

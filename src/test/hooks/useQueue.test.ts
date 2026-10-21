@@ -32,6 +32,7 @@ const config = (url: string): QueueConfig => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   handlers = {};
   unlisten = vi.fn();
   mockListen.mockImplementation(((event: string, handler: unknown) => {
@@ -186,14 +187,32 @@ describe('useQueue — pruning', () => {
     expect(result.current.items.map((i) => i.url)).toEqual(['https://a']);
   });
 
-  it('refuses to remove the item currently downloading', async () => {
+  it('cancels and drops the item currently downloading', async () => {
     const { result } = renderHook(() => useQueue());
     act(() => result.current.addItems([config('https://a')]));
     await waitFor(() => expect(result.current.items[0].status).toBe('downloading'));
+    const downloadId = currentDownloadId();
 
     act(() => result.current.removeItem(result.current.items[0].id));
 
-    expect(result.current.items).toHaveLength(1);
+    expect(mockInvoke).toHaveBeenCalledWith('cancel_download', { downloadId });
+    await waitFor(() => expect(result.current.items).toHaveLength(0));
+  });
+
+  it('records a finished item in the history', async () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useQueue());
+    act(() => result.current.addItems([config('https://youtu.be/a')]));
+    await waitFor(() => expect(result.current.items[0].status).toBe('downloading'));
+
+    act(() => emit('download://complete', { download_id: currentDownloadId(), filepath: '/x/a.mp4' }));
+
+    const stored = JSON.parse(localStorage.getItem('light-scrap-vidz:history') ?? '[]');
+    expect(stored[0]).toMatchObject({
+      url: 'https://youtu.be/a',
+      filepath: '/x/a.mp4',
+      platform: 'youtube',
+    });
   });
 
   it('clearDone keeps pending and downloading items', async () => {
@@ -228,5 +247,63 @@ describe('useQueue — teardown', () => {
     unmount();
 
     expect(unlisten).toHaveBeenCalled();
+  });
+});
+
+describe('useQueue — surviving a restart', () => {
+  const stored = (status: string) => ({
+    id: `id-${status}`,
+    url: `https://youtu.be/${status}`,
+    outputDir: '/tmp/out',
+    quality: 'best',
+    audioOnly: false,
+    playlistEnd: null,
+    cookiesBrowser: null,
+    status,
+  });
+
+  it('restores waiting items and resumes downloading them', async () => {
+    localStorage.setItem('light-scrap-vidz:queue', JSON.stringify([stored('pending')]));
+
+    const { result } = renderHook(() => useQueue());
+
+    expect(result.current.items).toHaveLength(1);
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'start_download',
+        expect.objectContaining({ url: 'https://youtu.be/pending' }),
+      ),
+    );
+  });
+
+  it('puts an interrupted download back to pending and drops finished rows', async () => {
+    localStorage.setItem(
+      'light-scrap-vidz:queue',
+      JSON.stringify([stored('downloading'), stored('done'), stored('error')]),
+    );
+
+    const { result } = renderHook(() => useQueue());
+
+    expect(result.current.items.map((i) => i.url)).toEqual(['https://youtu.be/downloading']);
+  });
+
+  it('writes the remaining items down and clears the key once the queue is empty', async () => {
+    const { result } = renderHook(() => useQueue());
+    act(() => result.current.addItems([config('https://youtu.be/a')]));
+    await waitFor(() => expect(result.current.items[0].status).toBe('downloading'));
+    expect(JSON.parse(localStorage.getItem('light-scrap-vidz:queue') ?? '[]')).toHaveLength(1);
+
+    act(() => emit('download://complete', { download_id: currentDownloadId(), filepath: '/x/a.mp4' }));
+    await waitFor(() => expect(result.current.items[0].status).toBe('done'));
+
+    expect(localStorage.getItem('light-scrap-vidz:queue')).toBeNull();
+  });
+
+  it('ignores a corrupted stored queue', () => {
+    localStorage.setItem('light-scrap-vidz:queue', '{not json');
+
+    const { result } = renderHook(() => useQueue());
+
+    expect(result.current.items).toEqual([]);
   });
 });

@@ -1,4 +1,10 @@
 const PATTERNS: Array<{ re: RegExp; msg: string }> = [
+  // --- Raised by the app itself (English messages from the Rust backend) ---
+  { re: /yt-dlp not found/i, msg: 'err.ytdlpMissing' },
+  { re: /failed to (spawn|run) yt-dlp/i, msg: 'err.spawn' },
+  { re: /checksum mismatch|no checksum published/i, msg: 'err.checksum' },
+  { re: /yt-dlp exited with an error/i, msg: 'err.generic' },
+
   // --- Auth / login ---
   {
     re: /login.*required|not logged in|sign in to|login to watch|requires.*authentication/i,

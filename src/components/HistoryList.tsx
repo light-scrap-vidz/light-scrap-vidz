@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { PLATFORM_META, PLATFORM_TINT } from '@/lib/platform';
 import { openFolder } from '@/lib/tauri-commands';
 import type { HistoryEntry } from '@/types';
-import { useT } from '@/lib/locale';
+import { useLang, useT } from '@/lib/locale';
+import { PlatformBadge } from './PlatformBadge';
+import { Spinner } from './Spinner';
+import { Thumb } from './Thumb';
 
 interface HistoryListProps {
   entries: HistoryEntry[];
@@ -11,35 +13,19 @@ interface HistoryListProps {
   isLoading?: boolean;
 }
 
-function timeAgo(ms: number): string {
-  const diff = Date.now() - ms;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+function timeAgo(ms: number, lang: string): string {
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
+  const minutes = Math.floor((Date.now() - ms) / 60000);
+  if (minutes < 1) return rtf.format(0, 'second');
+  if (minutes < 60) return rtf.format(-minutes, 'minute');
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
-function Spinner() {
-  return (
-    <span
-      className="lsv-spin"
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: '50%',
-        border: '2.5px solid rgba(201,242,94,0.25)',
-        borderTopColor: '#C9F25E',
-        display: 'inline-block',
-        flexShrink: 0,
-      }}
-    />
-  );
+  if (hours < 24) return rtf.format(-hours, 'hour');
+  return rtf.format(-Math.floor(hours / 24), 'day');
 }
 
 export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) {
   const t = useT();
+  const { lang } = useLang();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,7 +46,7 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#5C574F',
+          color: 'var(--text-faint)',
           fontSize: '13px',
         }}
       >
@@ -72,31 +58,33 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {entries.map((entry) => {
-        const meta = PLATFORM_META[entry.platform];
-        const tint = PLATFORM_TINT[entry.platform];
         const isPending = pendingId === entry.id && isLoading;
 
         return (
           <div
             key={entry.id}
+            className="lsv-hover-row"
+            aria-disabled={!!isLoading}
+            role="button"
+            tabIndex={0}
             onClick={() => handleSelect(entry)}
+            onKeyDown={(e) => {
+              if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                handleSelect(entry);
+              }
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 13,
               padding: 10,
-              background: '#1A1916',
+              background: 'var(--surface)',
               border: `1px solid ${isPending ? 'rgba(201,242,94,0.25)' : 'rgba(255,255,255,0.05)'}`,
               borderRadius: 12,
               transition: 'all .15s',
               cursor: onSelect && !isLoading ? 'pointer' : isLoading ? 'wait' : 'default',
               opacity: isLoading && !isPending ? 0.5 : 1,
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.12)';
-            }}
-            onMouseLeave={(e) => {
-              if (!isPending) (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.05)';
             }}
           >
             {/* Thumbnail / spinner */}
@@ -126,35 +114,8 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
                 >
                   <Spinner />
                 </div>
-              ) : entry.thumbnail ? (
-                <img
-                  src={entry.thumbnail}
-                  alt={entry.title}
-                  loading="lazy"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    img.style.display = 'none';
-                    const parent = img.parentElement;
-                    if (parent) {
-                      parent.style.background = `repeating-linear-gradient(135deg, #211F1A 0 7px, #1A1815 7px 14px)`;
-                      const overlay = document.createElement('div');
-                      overlay.style.cssText = `position:absolute;inset:0;background:${tint};opacity:0.12`;
-                      parent.appendChild(overlay);
-                    }
-                  }}
-                />
               ) : (
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'repeating-linear-gradient(135deg, #211F1A 0 7px, #1A1815 7px 14px)',
-                    position: 'relative',
-                  }}
-                >
-                  <div style={{ position: 'absolute', inset: 0, background: tint, opacity: 0.12 }} />
-                </div>
+                <Thumb src={entry.thumbnail} alt={entry.title} platform={entry.platform} lazy proxyOnly />
               )}
             </div>
 
@@ -165,7 +126,7 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
                   margin: 0,
                   fontSize: '13.5px',
                   fontWeight: 600,
-                  color: isPending ? '#C9F25E' : '#EAE6DF',
+                  color: isPending ? 'var(--accent)' : 'var(--text)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -175,26 +136,9 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
                 {isPending ? t('history.fetching') : entry.title}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '1px 7px',
-                    borderRadius: 999,
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    color: meta.color,
-                    background: meta.bgColor,
-                    border: `1px solid ${meta.borderColor}`,
-                    flexShrink: 0,
-                  }}
-                >
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: tint }} />
-                  {meta.label}
-                </span>
-                <span style={{ fontSize: '11px', color: '#5C574F', fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
-                  {timeAgo(entry.downloaded_at)}
+                <PlatformBadge platform={entry.platform} compact />
+                <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                  {timeAgo(entry.downloaded_at, lang)}
                 </span>
               </div>
             </div>
@@ -205,6 +149,7 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
               aria-label={t('history.reveal')}
               title={t('history.reveal')}
               disabled={!!isLoading}
+              className="lsv-hover-accent-bg"
               style={{
                 width: 30,
                 height: 30,
@@ -216,11 +161,9 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#5C574F',
+                color: 'var(--text-faint)',
                 transition: 'all .15s',
               }}
-              onMouseEnter={(e) => { if (!isLoading) { (e.currentTarget as HTMLButtonElement).style.color = '#C9F25E'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)'; } }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#5C574F'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />

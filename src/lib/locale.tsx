@@ -4,10 +4,13 @@ import { getT, type Lang } from './i18n';
 
 const LANG_KEY = 'light-scrap-vidz:language';
 
-/** La langue retenue au dernier lancement. Anglais par défaut : c'est la seule
- * langue que l'app parlait avant, donc une mise à jour ne déplace personne. */
+/** La langue retenue au dernier lancement ; au premier lancement, celle du système. */
 export function loadLang(): Lang {
-  return localStorage.getItem(LANG_KEY) === 'fr' ? 'fr' : 'en';
+  const saved = localStorage.getItem(LANG_KEY);
+  if (saved === 'fr' || saved === 'en') return saved;
+  return typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('fr')
+    ? 'fr'
+    : 'en';
 }
 
 export function saveLang(lang: Lang): void {

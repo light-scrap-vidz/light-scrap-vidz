@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatDuration, formatBytes } from '@/lib/utils';
+import { cn, formatDuration, formatBytes, newId } from '@/lib/utils';
 
 describe('cn', () => {
   it('joins class names', () => {
@@ -64,5 +64,23 @@ describe('formatBytes', () => {
     expect(formatBytes(1536)).toBe('1.5 KB');
     expect(formatBytes(1024 * 1024 * 2.25)).toBe('2.3 MB');
     expect(formatBytes(2048)).toBe('2 KB');
+  });
+});
+
+describe('newId', () => {
+  it('returns distinct v4-shaped identifiers', () => {
+    const a = newId();
+    expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(newId()).not.toBe(a);
+  });
+
+  it('still works without crypto.randomUUID', () => {
+    const original = crypto.randomUUID;
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+    try {
+      expect(newId()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    } finally {
+      Object.defineProperty(crypto, 'randomUUID', { value: original, configurable: true });
+    }
   });
 });

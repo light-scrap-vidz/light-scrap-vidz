@@ -26,16 +26,13 @@ describe('FormatSelector — format toggle', () => {
 
   it('highlights the video segment when audio is off', () => {
     setup({ audioOnly: false });
-    expect(screen.getByRole('button', { name: 'Video · MP4' })).toHaveStyle({
-      background: '#C9F25E',
-    });
+    expect(screen.getByRole('button', { name: 'Video · MP4' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Audio · MP3' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('highlights the audio segment when audio is on', () => {
     setup({ audioOnly: true });
-    expect(screen.getByRole('button', { name: 'Audio · MP3' })).toHaveStyle({
-      background: '#C9F25E',
-    });
+    expect(screen.getByRole('button', { name: 'Audio · MP3' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('reports the switch to audio', () => {
@@ -73,8 +70,8 @@ describe('FormatSelector — quality row', () => {
 
   it('highlights the active quality', () => {
     setup({ quality: '720p' });
-    expect(screen.getByRole('button', { name: '720p' })).toHaveStyle({ background: '#C9F25E' });
-    expect(screen.getByRole('button', { name: 'Best' })).toHaveStyle({ background: '#211F1B' });
+    expect(screen.getByRole('button', { name: '720p' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Best' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it.each(['best', '1080p', '720p', '480p'] as const)('reports the %s choice', (quality) => {

@@ -44,11 +44,7 @@ export const fetchThumbnail = (url: string): Promise<string> =>
 export const detectInstalledBrowsers = (): Promise<string[]> =>
   invoke('detect_installed_browsers');
 
-export const getInstallKind = (): Promise<'appimage' | 'deb'> =>
+export type InstallKind = 'macos' | 'appimage' | 'deb' | 'rpm';
+
+export const getInstallKind = (): Promise<InstallKind> =>
   invoke('install_kind');
-
-export const downloadDebUpdate = (version: string): Promise<string> =>
-  invoke('download_deb_update', { version });
-
-export const installDebUpdate = (version: string): Promise<void> =>
-  invoke('install_deb_update', { version });

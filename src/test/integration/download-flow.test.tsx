@@ -50,7 +50,7 @@ describe('download flow integration', () => {
     });
 
     expect(result.current.status).toBe('error');
-    expect(result.current.error).toContain('yt-dlp error');
+    expect(result.current.error).toBe('err.unavailable');
   });
 
   it('resets state correctly', async () => {

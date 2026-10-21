@@ -4,9 +4,10 @@ const PLATFORM_PATTERNS: Array<{ platform: Platform; patterns: RegExp[] }> = [
   {
     platform: 'youtube',
     patterns: [
-      /^https?:\/\/(www\.)?youtube\.com\/watch\?.*v=/,
+      /^https?:\/\/(?:www\.|m\.)?youtube\.com\/watch\?.*v=/,
       /^https?:\/\/youtu\.be\//,
-      /^https?:\/\/(www\.)?youtube\.com\/shorts\//,
+      /^https?:\/\/(?:www\.|m\.)?youtube\.com\/shorts\//,
+      /^https?:\/\/(?:www\.|m\.)?youtube\.com\/live\//,
     ],
   },
   {
@@ -27,6 +28,7 @@ const PLATFORM_PATTERNS: Array<{ platform: Platform; patterns: RegExp[] }> = [
       /^https?:\/\/(www\.)?facebook\.com\/.+\/videos\//,
       /^https?:\/\/(www\.)?facebook\.com\/watch/,
       /^https?:\/\/fb\.watch\//,
+      /^https?:\/\/(www\.)?facebook\.com\/(reel|share\/[vr])\//,
     ],
   },
   {
@@ -54,30 +56,23 @@ const PLATFORM_PATTERNS: Array<{ platform: Platform; patterns: RegExp[] }> = [
   {
     platform: 'vimeo',
     patterns: [
-      /^https?:\/\/(www\.)?vimeo\.com\/\d+/,
+      /^https?:\/\/(www\.|player\.)?vimeo\.com\/(video\/)?\d+/,
     ],
   },
 ];
 
 // Profile / channel / playlist URLs (ordered newest-first by most platforms)
 const PLAYLIST_PATTERNS: Array<{ platform: Platform; pattern: RegExp }> = [
-  { platform: 'youtube', pattern: /^https?:\/\/(www\.)?youtube\.com\/@[^/?#]+\/?$/ },
+  { platform: 'youtube', pattern: /^https?:\/\/(?:www\.|m\.)?youtube\.com\/@[^/?#]+\/?$/ },
   {
     platform: 'youtube',
-    pattern: /^https?:\/\/(www\.)?youtube\.com\/channel\/[^/?#]+\/?$/,
+    pattern: /^https?:\/\/(?:www\.|m\.)?youtube\.com\/channel\/[^/?#]+\/?$/,
   },
-  { platform: 'youtube', pattern: /^https?:\/\/(www\.)?youtube\.com\/c\/[^/?#]+\/?$/ },
-  { platform: 'youtube', pattern: /^https?:\/\/(www\.)?youtube\.com\/user\/[^/?#]+\/?$/ },
-  { platform: 'youtube', pattern: /^https?:\/\/(www\.)?youtube\.com\/playlist\?list=/ },
+  { platform: 'youtube', pattern: /^https?:\/\/(?:www\.|m\.)?youtube\.com\/c\/[^/?#]+\/?$/ },
+  { platform: 'youtube', pattern: /^https?:\/\/(?:www\.|m\.)?youtube\.com\/user\/[^/?#]+\/?$/ },
+  { platform: 'youtube', pattern: /^https?:\/\/(?:www\.|m\.)?youtube\.com\/playlist\?list=/ },
   { platform: 'tiktok', pattern: /^https?:\/\/(www\.)?tiktok\.com\/@[^/?#]+\/?$/ },
-  {
-    platform: 'instagram',
-    pattern: /^https?:\/\/(www\.)?instagram\.com\/[^/?#]+\/?$/,
-  },
-  {
-    platform: 'instagram',
-    pattern: /^https?:\/\/(www\.)?instagram\.com\/[^/?#]+\/reels\/?$/,
-  },
+  // Instagram profiles are not listed: yt-dlp's profile extractor is marked as broken.
 ];
 
 export function getPlatform(url: string): Platform {
@@ -92,12 +87,15 @@ export function getPlatform(url: string): Platform {
 }
 
 export function isPlaylistUrl(url: string): boolean {
+  let parsed: URL;
   try {
-    new URL(url);
+    parsed = new URL(url);
   } catch {
     return false;
   }
-  return PLAYLIST_PATTERNS.some(({ pattern }) => pattern.test(url));
+  // Share links append tracking parameters (?si=…, ?_t=…) to profile and channel URLs.
+  const withoutQuery = `${parsed.origin}${parsed.pathname}`;
+  return PLAYLIST_PATTERNS.some(({ pattern }) => pattern.test(url) || pattern.test(withoutQuery));
 }
 
 export function getUrlKind(url: string): UrlKind {
@@ -111,4 +109,21 @@ export function isValidUrl(url: string): boolean {
     return false;
   }
   return getPlatform(url) !== 'unknown';
+}
+
+const YOUTUBE_CHANNEL_ROOT =
+  /^(https?:\/\/(?:www\.|m\.)?youtube\.com\/(?:@[^/?#]+|channel\/[^/?#]+|c\/[^/?#]+|user\/[^/?#]+))\/?$/;
+
+/** URL à confier à yt-dlp. La racine d'une chaîne YouTube se résout en une « playlist
+ * d'onglets » (Vidéos, Shorts, Live) : on vise directement l'onglet Vidéos. Les paramètres
+ * de partage (?si=…) sont retirés au passage. */
+export function normalizeUrl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  const root = YOUTUBE_CHANNEL_ROOT.exec(`${parsed.origin}${parsed.pathname}`);
+  return root ? `${root[1]}/videos` : url;
 }

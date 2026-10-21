@@ -1,9 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { v4 as uuidv4 } from 'uuid';
-import { startDownload } from '@/lib/tauri-commands';
+import { newId } from '@/lib/utils';
+import { startDownload, cancelDownload } from '@/lib/tauri-commands';
 import { parseYtdlpError } from '@/lib/error-parser';
-import type { CookiesBrowser, DownloadComplete, DownloadProgress, Quality, QueueItem } from '@/types';
+import { EVENT_COMPLETE, EVENT_ERROR, EVENT_PROGRESS } from '@/lib/events';
+import { getPlatform } from '@/lib/url-validator';
+import { loadQueue, saveQueue } from '@/lib/queue-store';
+import { useHistory } from './useHistory';
+import type { DownloadComplete, DownloadProgress, QueueItem } from '@/types';
 
 type QueueConfig = Omit<QueueItem, 'id' | 'status' | 'error' | 'progress'>;
 
@@ -17,13 +21,20 @@ interface UseQueueReturn {
 }
 
 export function useQueue(): UseQueueReturn {
-  const [items, setItems] = useState<QueueItem[]>([]);
-  const itemsRef = useRef<QueueItem[]>([]);
+  const { addEntry } = useHistory();
+  const [items, setItems] = useState<QueueItem[]>(loadQueue);
+  const itemsRef = useRef<QueueItem[]>(items);
   const processingRef = useRef(false);
   const unlistenRefs = useRef<UnlistenFn[]>([]);
+  const currentDownload = useRef<{ itemId: string; downloadId: string; abort: () => void } | null>(
+    null,
+  );
+  const addEntryRef = useRef(addEntry);
+  addEntryRef.current = addEntry;
 
   useEffect(() => {
     itemsRef.current = items;
+    saveQueue(items);
   }, [items]);
 
   useEffect(() => () => { unlistenRefs.current.forEach((fn) => fn()); }, []);
@@ -34,7 +45,7 @@ export function useQueue(): UseQueueReturn {
     if (!next) return;
 
     processingRef.current = true;
-    const downloadId = uuidv4();
+    const downloadId = newId();
 
     setItems((prev) =>
       prev.map((i) => (i.id === next.id ? { ...i, status: 'downloading' as const } : i)),
@@ -42,16 +53,25 @@ export function useQueue(): UseQueueReturn {
 
     unlistenRefs.current.forEach((fn) => fn());
 
-    const onDone = (status: 'done' | 'error', error?: string) => {
+    const onDone = (status: 'done' | 'error', error?: string, remove = false) => {
+      currentDownload.current = null;
       setItems((prev) =>
-        prev.map((i) => (i.id === next.id ? { ...i, status, error, progress: undefined } : i)),
+        remove
+          ? prev.filter((i) => i.id !== next.id)
+          : prev.map((i) => (i.id === next.id ? { ...i, status, error, progress: undefined } : i)),
       );
       processingRef.current = false;
       // Schedule next tick to avoid re-entrancy
       setTimeout(() => { void processNext(); }, 50);
     };
 
-    const ul1 = await listen<DownloadProgress>('download://progress', (e) => {
+    currentDownload.current = {
+      itemId: next.id,
+      downloadId,
+      abort: () => onDone('error', undefined, true),
+    };
+
+    const ul1 = await listen<DownloadProgress>(EVENT_PROGRESS, (e) => {
       if (e.payload.download_id === downloadId) {
         setItems((prev) =>
           prev.map((i) => (i.id === next.id ? { ...i, progress: e.payload.percent } : i)),
@@ -59,13 +79,23 @@ export function useQueue(): UseQueueReturn {
       }
     });
 
-    const ul2 = await listen<DownloadComplete>('download://complete', (e) => {
+    const ul2 = await listen<DownloadComplete>(EVENT_COMPLETE, (e) => {
       if (e.payload.download_id === downloadId) {
+        addEntryRef.current({
+          id: downloadId,
+          url: next.url,
+          title: next.url,
+          thumbnail: '',
+          platform: getPlatform(next.url),
+          filepath: e.payload.filepath,
+          downloaded_at: Date.now(),
+          quality: next.quality,
+        });
         onDone('done');
       }
     });
 
-    const ul3 = await listen<{ download_id: string; message: string }>('download://error', (e) => {
+    const ul3 = await listen<{ download_id: string; message: string }>(EVENT_ERROR, (e) => {
       if (e.payload.download_id === downloadId) {
         onDone('error', parseYtdlpError(e.payload.message));
       }
@@ -88,11 +118,21 @@ export function useQueue(): UseQueueReturn {
     }
   }, []);
 
+  // Rows restored from the previous session pick up where they left off.
+  useEffect(() => {
+    if (itemsRef.current.some((i) => i.status === 'pending')) {
+      const timer = setTimeout(() => {
+        void processNext();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [processNext]);
+
   const addItems = useCallback(
     (configs: QueueConfig[]) => {
       const queued: QueueItem[] = configs.map((c) => ({
         ...c,
-        id: uuidv4(),
+        id: newId(),
         status: 'pending' as const,
       }));
       setItems((prev) => {
@@ -106,6 +146,13 @@ export function useQueue(): UseQueueReturn {
   );
 
   const removeItem = useCallback((id: string) => {
+    const current = currentDownload.current;
+    if (current?.itemId === id) {
+      // The running item: stop yt-dlp (it emits nothing once cancelled) and drop the row.
+      void cancelDownload(current.downloadId).catch(() => {});
+      current.abort();
+      return;
+    }
     setItems((prev) => prev.filter((i) => i.id !== id || i.status === 'downloading'));
   }, []);
 
@@ -122,4 +169,4 @@ export function useQueue(): UseQueueReturn {
   return { items, isActive, addItems, removeItem, clearDone, clearAll };
 }
 
-export type { QueueConfig, Quality, CookiesBrowser };
+export type { QueueConfig };

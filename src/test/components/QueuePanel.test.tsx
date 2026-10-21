@@ -84,13 +84,9 @@ describe('QueuePanel — adding URLs', () => {
     expect(textarea()).toHaveValue('just some words');
   });
 
-  it('highlights the box while it has focus', () => {
+  it('takes its focus highlight from the shared CSS class', () => {
     setup();
-    fireEvent.focus(textarea());
-    expect(textarea()).toHaveStyle({ borderColor: '#C9F25E' });
-
-    fireEvent.blur(textarea());
-    expect(textarea()).not.toHaveStyle({ borderColor: '#C9F25E' });
+    expect(textarea()).toHaveClass('lsv-field');
   });
 });
 
@@ -102,7 +98,7 @@ describe('QueuePanel — rows', () => {
     expect(screen.getByText('https://youtu.be/b')).toBeInTheDocument();
   });
 
-  it('offers a remove button on pending rows only', () => {
+  it('offers a remove button on pending and running rows only', () => {
     setup([
       item({ id: '1', status: 'pending' }),
       item({ id: '2', status: 'downloading' }),
@@ -110,7 +106,7 @@ describe('QueuePanel — rows', () => {
       item({ id: '4', status: 'error' }),
     ]);
 
-    expect(screen.getAllByLabelText('Remove from queue')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Remove from queue')).toHaveLength(2);
   });
 
   it('reports which row was removed', () => {
@@ -189,16 +185,5 @@ describe('QueuePanel — rows', () => {
     expect(container.querySelectorAll('svg[stroke="#C9F25E"]')).toHaveLength(1);
     expect(container.querySelectorAll('svg[stroke="#FF8A8A"]')).toHaveLength(1);
     expect(container.querySelectorAll('svg[stroke="#6F6960"]')).toHaveLength(1);
-  });
-
-  it('tints the remove button on hover and restores it on leave', () => {
-    setup([item()]);
-    const button = screen.getByLabelText('Remove from queue');
-
-    fireEvent.mouseEnter(button);
-    expect(button).toHaveStyle({ color: '#C2BCB2' });
-
-    fireEvent.mouseLeave(button);
-    expect(button).toHaveStyle({ color: '#5C574F' });
   });
 });

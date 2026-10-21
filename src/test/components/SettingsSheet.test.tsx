@@ -5,11 +5,13 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { SettingsButton } from '@/components/SettingsButton';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { SettingsSheet } from '@/components/SettingsSheet';
 
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn() }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn() }));
+vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
 
 const mockInvoke = vi.mocked(invoke);
 const mockOpen = vi.mocked(open);
@@ -20,12 +22,12 @@ const mockRelaunch = vi.mocked(relaunch);
 /** Per-command backend responses. */
 let responses: Record<string, unknown>;
 
-function setup(props: Partial<Parameters<typeof SettingsButton>[0]> = {}) {
+function setup(props: Partial<Parameters<typeof SettingsSheet>[0]> = {}) {
   const onClose = vi.fn();
   const onOutputDirChange = vi.fn();
   const onCookiesBrowserChange = vi.fn();
   const view = render(
-    <SettingsButton
+    <SettingsSheet
       open
       onClose={onClose}
       outputDir="/home/me/Videos"
@@ -41,12 +43,13 @@ function setup(props: Partial<Parameters<typeof SettingsButton>[0]> = {}) {
 
 const updateButton = () =>
   screen.getByRole('button', {
-    name: /Check for updates|Checking…|Downloading|Installing…|Up to date|Retry|Update/,
+    name: /Check for updates|Checking…|Downloading|Installing…|Up to date|Retry|Update to/,
   });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  responses = { install_kind: 'deb', update_ytdlp: 'ok', download_deb_update: '/tmp/u.deb', install_deb_update: undefined };
+  localStorage.clear();
+  responses = { install_kind: 'deb', update_ytdlp: 'ok' };
   mockInvoke.mockImplementation((command: string) =>
     command in responses
       ? Promise.resolve(responses[command])
@@ -57,7 +60,7 @@ beforeEach(() => {
   mockOpen.mockResolvedValue(null);
 });
 
-describe('SettingsButton — visibility', () => {
+describe('SettingsSheet — visibility', () => {
   it('renders nothing while closed', () => {
     const { container } = setup({ open: false });
     expect(container).toBeEmptyDOMElement();
@@ -85,7 +88,7 @@ describe('SettingsButton — visibility', () => {
   });
 });
 
-describe('SettingsButton — app info', () => {
+describe('SettingsSheet — app info', () => {
   it('shows the app version once loaded', async () => {
     setup();
     expect(await screen.findByText('v0.2.14')).toBeInTheDocument();
@@ -105,7 +108,7 @@ describe('SettingsButton — app info', () => {
   });
 });
 
-describe('SettingsButton — output folder', () => {
+describe('SettingsSheet — output folder', () => {
   it('shows the current folder', async () => {
     setup();
     expect(screen.getByText('/home/me/Videos')).toBeInTheDocument();
@@ -131,20 +134,21 @@ describe('SettingsButton — output folder', () => {
   });
 });
 
-describe('SettingsButton — notification toggle', () => {
+describe('SettingsSheet — notification toggle', () => {
   it('starts on and flips when clicked', async () => {
     setup();
-    const toggle = screen.getByLabelText('Toggle notification');
-    expect(toggle).toHaveStyle({ background: '#C9F25E' });
+    const toggle = screen.getByRole('switch', { name: 'Toggle notification' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
 
     fireEvent.click(toggle);
 
-    expect(toggle).toHaveStyle({ background: '#211F1B' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(localStorage.getItem('light-scrap-vidz:notify')).toBe('off');
     await waitFor(() => expect(mockGetVersion).toHaveBeenCalled());
   });
 });
 
-describe('SettingsButton — browser cookies', () => {
+describe('SettingsSheet — browser cookies', () => {
   it('offers only the detected browsers', async () => {
     setup();
     expect(screen.getByRole('button', { name: 'Firefox' })).toBeInTheDocument();
@@ -160,7 +164,7 @@ describe('SettingsButton — browser cookies', () => {
   });
 });
 
-describe('SettingsButton — update check', () => {
+describe('SettingsSheet — update check', () => {
   it('reports being up to date and refreshes yt-dlp on the way', async () => {
     setup();
 
@@ -186,20 +190,19 @@ describe('SettingsButton — update check', () => {
     expect(await screen.findByText('Up to date ✓')).toBeInTheDocument();
   });
 
-  it('downloads and installs a deb update, then relaunches', async () => {
+  it('sends deb users to the release page instead of installing', async () => {
     mockCheck.mockResolvedValue({ available: true, version: '0.3.0' } as never);
     setup();
     await screen.findByText('v0.2.14');
 
     fireEvent.click(updateButton());
+    fireEvent.click(await screen.findByRole('button', { name: 'Update to v0.3.0' }));
 
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('download_deb_update', { version: '0.3.0' }),
-    );
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith('install_deb_update', { version: '0.3.0' }),
-    );
-    await waitFor(() => expect(mockRelaunch).toHaveBeenCalled());
+    await waitFor(() => expect(vi.mocked(openUrl)).toHaveBeenCalledWith(
+      'https://github.com/light-scrap-vidz/light-scrap-vidz/releases/latest',
+    ));
+    expect(mockInvoke).not.toHaveBeenCalledWith('install_deb_update', expect.anything());
+    expect(mockRelaunch).not.toHaveBeenCalled();
   });
 
   it('installs an AppImage update in place, tracking progress', async () => {
@@ -216,11 +219,12 @@ describe('SettingsButton — update check', () => {
     await screen.findByText('v0.2.14');
 
     fireEvent.click(updateButton());
+    expect(downloadAndInstall).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: 'Update to v0.3.0' }));
 
     await waitFor(() => expect(downloadAndInstall).toHaveBeenCalled());
     await waitFor(() => expect(mockRelaunch).toHaveBeenCalled());
-    expect(mockInvoke).not.toHaveBeenCalledWith('download_deb_update', expect.anything());
-  });
+      });
 
   it('leaves progress at zero when the download reports no total size', async () => {
     responses.install_kind = 'appimage';
@@ -235,6 +239,7 @@ describe('SettingsButton — update check', () => {
     await screen.findByText('v0.2.14');
 
     fireEvent.click(updateButton());
+    fireEvent.click(await screen.findByRole('button', { name: 'Update to v0.3.0' }));
 
     await waitFor(() => expect(mockRelaunch).toHaveBeenCalled());
   });

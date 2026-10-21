@@ -185,7 +185,7 @@ describe('App — home view', () => {
     fireEvent.change(urlBox(), { target: { value: 'https://youtu.be/a' } });
     fireEvent.keyDown(urlBox(), { key: 'Enter' });
 
-    expect(await screen.findByText('video is private')).toBeInTheDocument();
+    expect(await screen.findByText('This video is private.')).toBeInTheDocument();
   });
 
   it('re-fetches when a history row is clicked', async () => {
@@ -399,7 +399,7 @@ describe('App — downloading view', () => {
     expect(await screen.findByRole('button', { name: /Download MP4/ })).toBeInTheDocument();
   });
 
-  it('surfaces no reason at all when the download fails', async () => {
+  it('shows why the download failed', async () => {
     await startDownload();
 
     act(() =>
@@ -408,12 +408,8 @@ describe('App — downloading view', () => {
         message: 'ERROR: This video is private',
       }),
     );
-    await screen.findByRole('button', { name: /Download MP4/ });
 
-    // `useDownload` parses the message and App passes it to ProgressCard as `error`,
-    // but ProgressCard never renders that prop and only shows itself while downloading,
-    // so the failure reason is lost on the way to the screen.
-    expect(screen.queryByText(/This video is private/)).not.toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('This video is private.');
   });
 });
 
@@ -539,89 +535,51 @@ describe('App — queue tab', () => {
   });
 });
 
-describe('App — retour visuel au survol', () => {
-  /** Survole `el` puis le quitte, en relevant `property` à chaque étape. */
-  function hoverCycle(el: HTMLElement, property: 'color' | 'background' | 'transform' | 'borderColor') {
-    fireEvent.mouseEnter(el);
-    const during = el.style[property];
-    fireEvent.mouseLeave(el);
-    return { during, after: el.style[property] };
-  }
-
-  it('éclaire le bouton retour puis le rend', async () => {
-    render(<App />);
-    await fetchUrl();
-
-    const { during, after } = hoverCycle(screen.getByLabelText('Back'), 'color');
-
-    expect(during).toBe('rgb(214, 209, 200)');
-    expect(after).toBe('rgb(133, 127, 117)');
-  });
-
-  it('éclaire le bouton réglages puis le rend', async () => {
-    render(<App />);
-    await screen.findByLabelText('Settings');
-
-    const { during, after } = hoverCycle(screen.getByLabelText('Settings'), 'background');
-
-    expect(during).toBe('rgb(33, 31, 27)');
-    expect(after).toBe('transparent');
-  });
-
-  it('éclaire « Clear all » de l’historique puis le rend', async () => {
-    localStorage.setItem(
-      HISTORY_KEY,
-      JSON.stringify([
-        {
-          id: 'h1',
-          url: 'https://youtu.be/x',
-          title: 'Déjà vu',
-          thumbnail: '',
-          platform: 'youtube',
-          filepath: '/home/me/Videos/x.mp4',
-          downloaded_at: Date.now(),
-          quality: 'best',
-        },
-      ]),
-    );
-    render(<App />);
-
-    const { during, after } = hoverCycle(await screen.findByText('Clear all'), 'color');
-
-    expect(during).toBe('rgb(163, 157, 147)');
-    expect(after).toBe('rgb(111, 105, 96)');
-  });
-
-  it('éclaire l’annulation du téléchargement puis la rend', async () => {
-    localStorage.setItem(DIR_KEY, '/home/me/Videos');
-    render(<App />);
-    await fetchUrl();
-    fireEvent.click(screen.getByRole('button', { name: /Download MP4/ }));
-
-    const cancel = await screen.findByRole('button', { name: /Cancel download/i });
-    const { during, after } = hoverCycle(cancel, 'color');
-
-    expect(during).toBe('rgb(255, 138, 138)');
-    expect(after).toBe('rgb(194, 188, 178)');
-  });
-
-  it('soulève « Download another » puis le repose', async () => {
-    localStorage.setItem(DIR_KEY, '/home/me/Videos');
-    render(<App />);
+describe('App — regressions', () => {
+  async function downloadAndGoHome(title: string) {
+    responses.fetch_video_info = { ...videoInfo, title };
     await fetchUrl();
     fireEvent.click(screen.getByRole('button', { name: /Download MP4/ }));
     await screen.findByRole('button', { name: /Cancel/i });
-    act(() =>
-      emit('download://complete', {
-        download_id: downloadId(),
-        filepath: '/home/me/Videos/clip.mp4',
+    act(() => emit('download://complete', { download_id: downloadId(), filepath: '/x/clip.mp4' }));
+    await screen.findByLabelText('Open file');
+    fireEvent.click(screen.getByLabelText('Back'));
+    await screen.findByText('Supports:');
+  }
+
+  it('lists a finished download in Recent without a restart', async () => {
+    localStorage.setItem(DIR_KEY, '/home/me/Videos');
+    render(<App />);
+    await downloadAndGoHome('Fresh clip');
+    expect(screen.getByText('Fresh clip')).toBeInTheDocument();
+  });
+
+  it('does not bring cleared entries back with the next download', async () => {
+    localStorage.setItem(DIR_KEY, '/home/me/Videos');
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify([
+        { id: 'old', url: 'https://youtu.be/old', title: 'Old one', thumbnail: '', platform: 'youtube', filepath: '/x', downloaded_at: Date.now(), quality: 'best' },
+      ]),
+    );
+    render(<App />);
+    fireEvent.click(await screen.findByText('Clear all'));
+    await downloadAndGoHome('New one');
+    const titles = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]').map((e: { title: string }) => e.title);
+    expect(titles).toEqual(['New one']);
+  });
+
+  it('sends the auto-selected browser with the very first fetch', async () => {
+    render(<App />);
+    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith('detect_installed_browsers'));
+    await act(async () => {});
+    fireEvent.change(urlBox(), { target: { value: 'https://www.instagram.com/reel/ABC/' } });
+    fireEvent.keyDown(urlBox(), { key: 'Enter' });
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith('fetch_video_info', {
+        url: 'https://www.instagram.com/reel/ABC/',
+        cookiesBrowser: 'firefox',
       }),
     );
-
-    const again = await screen.findByRole('button', { name: 'Download another' });
-    const { during, after } = hoverCycle(again, 'transform');
-
-    expect(during).toBe('translateY(-1px)');
-    expect(after).toBe('none');
   });
-})
+});

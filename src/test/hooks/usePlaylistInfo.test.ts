@@ -107,3 +107,27 @@ describe('usePlaylistInfo', () => {
     expect(result.current.error).toBeNull();
   });
 });
+
+describe('usePlaylistInfo — stale answers', () => {
+  it('ignores a slow answer that a newer lookup superseded', async () => {
+    let resolveFirst: (v: unknown) => void = () => {};
+    mockInvoke
+      .mockImplementationOnce(() => new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValueOnce({ title: 'second', entries: [] });
+    const { result } = renderHook(() => usePlaylistInfo());
+
+    let first!: Promise<unknown>;
+    act(() => {
+      first = result.current.fetchInfo('https://a');
+    });
+    await act(async () => {
+      await result.current.fetchInfo('https://b');
+    });
+    await act(async () => {
+      resolveFirst({ title: 'first', entries: [] });
+      await first;
+    });
+
+    expect(result.current.info?.title).toBe('second');
+  });
+});
