@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # tauri-action names the bundles after the version in tauri.conf.json, while the
@@ -17,7 +17,7 @@ jobs:
     name: Check the tag matches the manifests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Compare the tag with tauri.conf.json and Cargo.toml
         env:
@@ -33,6 +33,8 @@ jobs:
 
   publish:
     needs: [check-version]
+    permissions:
+      contents: write
     name: Publish ${{ matrix.label }}
     strategy:
       fail-fast: false
@@ -48,18 +50,19 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: './src-tauri -> target'
 
@@ -81,11 +84,11 @@ jobs:
         run: |
           mkdir -p src-tauri/binaries
           if [ "${{ runner.os }}" = "macOS" ]; then
-            curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" \
+            curl -fL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" \
               -o "src-tauri/binaries/yt-dlp-lsv-aarch64-apple-darwin"
             chmod +x "src-tauri/binaries/yt-dlp-lsv-aarch64-apple-darwin"
           else
-            curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" \
+            curl -fL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" \
               -o "src-tauri/binaries/yt-dlp-lsv-x86_64-unknown-linux-gnu"
             chmod +x "src-tauri/binaries/yt-dlp-lsv-x86_64-unknown-linux-gnu"
           fi
@@ -132,8 +135,11 @@ jobs:
           IS_PRE="${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}"
           EXTRA=""
           [ "$IS_PRE" = "true" ] && EXTRA="--prerelease"
-          gh release create "$TAG" --title "$TAG" --notes "Release $TAG" --draft $EXTRA \
-            --repo sindus/light-scrap-vidz 2>/dev/null || true
+          # Both matrix jobs run this step: the second finds the release already created.
+          gh release view "$TAG" --repo light-scrap-vidz/light-scrap-vidz >/dev/null 2>&1 \
+            || gh release create "$TAG" --title "$TAG" --notes "Release $TAG" --draft $EXTRA \
+              --repo light-scrap-vidz/light-scrap-vidz \
+            || gh release view "$TAG" --repo light-scrap-vidz/light-scrap-vidz >/dev/null
 
       - name: Upload release assets
         env:
@@ -147,11 +153,11 @@ jobs:
                -o -name "*.app.tar.gz" -o -name "*.AppImage.tar.gz" \) \
             ! -name "*vid-z*" | while read f; do
             echo "Uploading: $(basename "$f")"
-            gh release upload "$TAG" "$f" --clobber --repo sindus/light-scrap-vidz
+            gh release upload "$TAG" "$f" --clobber --repo light-scrap-vidz/light-scrap-vidz
           done
 
       - name: Upload signature artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sig-${{ matrix.target }}
           path: |
@@ -162,11 +168,13 @@ jobs:
   latest-json:
     name: Generate latest.json
     needs: publish
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
       - name: Download signatures
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: sig-*
           merge-multiple: true
@@ -179,7 +187,7 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"
           DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          BASE="https://github.com/sindus/light-scrap-vidz/releases/download/${TAG}"
+          BASE="https://github.com/light-scrap-vidz/light-scrap-vidz/releases/download/${TAG}"
 
           find sigs -name "*.sig" | sort
           LINUX_SIG=$(find sigs -name "*.AppImage.tar.gz.sig" ! -name "*vid-z*" | head -1 | xargs cat 2>/dev/null || echo "")
@@ -208,7 +216,7 @@ jobs:
           " "$VERSION" "$DATE" "$LINUX_SIG" "$BASE" "$DARWIN_SIG"
 
           echo "Uploading latest.json..."
-          gh release upload "$TAG" latest.json --clobber --repo sindus/light-scrap-vidz
+          gh release upload "$TAG" latest.json --clobber --repo light-scrap-vidz/light-scrap-vidz
 
   # La release reste en brouillon le temps de la construction : elle ne devient
   # publique qu'une fois toutes les plateformes réussies et latest.json déposé,
@@ -217,6 +225,8 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     needs: [publish, latest-json]
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Mark release as latest
@@ -227,4 +237,4 @@ jobs:
           IS_PRE="${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}"
           EXTRA=""
           [ "$IS_PRE" = "true" ] || EXTRA="--latest"
-          gh release edit "$TAG" --draft=false $EXTRA --repo sindus/light-scrap-vidz
+          gh release edit "$TAG" --draft=false $EXTRA --repo light-scrap-vidz/light-scrap-vidz

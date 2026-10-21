@@ -19,7 +19,7 @@ APP_COMMENT="Video downloader"
 CATEGORIES="AudioVideo;Video;Network;"
 ICON_URL="https://raw.githubusercontent.com/$REPO/main/src-tauri/icons/128x128@2x.png"
 ICON_SIZE="256x256"
-RUNTIME_DEPS=""
+RUNTIME_DEPS="ffmpeg curl"
 
 log() { printf '==> %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -65,6 +65,8 @@ install_runtime_deps() {
 }
 
 install_macos() {
+  [ "$(uname -m)" = "arm64" ] \
+    || die "Apple Silicon (M1 or later) is required. Download manually from https://github.com/$REPO/releases"
   command -v brew >/dev/null 2>&1 \
     || die "Homebrew is required on macOS. Install it from https://brew.sh"
   brew tap "$TAP"
@@ -80,7 +82,7 @@ install_macos() {
 
 install_deb() {
   url="$(latest_asset deb)"
-  [ -n "$url" ] || die "No .deb in the latest release — see https://github.com/$REPO/releases"
+  [ -n "$url" ] || die "No .deb found (no release yet, or GitHub API rate limit reached — retry later) — see https://github.com/$REPO/releases"
   tmp="$(mktemp -d)/$(basename "$url")"
   log "Downloading $(basename "$url")…"
   fetch "$url" "$tmp"
@@ -92,7 +94,7 @@ install_deb() {
 
 install_appimage() {
   url="$(latest_asset AppImage)"
-  [ -n "$url" ] || die "No .AppImage in the latest release — see https://github.com/$REPO/releases"
+  [ -n "$url" ] || die "No .AppImage found (no release yet, or GitHub API rate limit reached — retry later) — see https://github.com/$REPO/releases"
 
   bin_dir="$HOME/.local/bin"
   desktop_dir="$HOME/.local/share/applications"
@@ -103,6 +105,8 @@ install_appimage() {
   log "Downloading $(basename "$url")…"
   fetch "$url" "$target"
   chmod +x "$target"
+  command -v fusermount >/dev/null 2>&1 \
+    || log "Note: AppImages need FUSE 2 (e.g. 'libfuse2'); install it if the app does not start."
 
   fetch "$ICON_URL" "$icon_dir/$APP_SLUG.png" 2>/dev/null || true
 

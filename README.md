@@ -13,10 +13,10 @@ Download videos from TikTok, Instagram, YouTube, Facebook — and any site suppo
 - **Single video or full playlist/profile** download
 - **Audio-only extraction** to MP3
 - **Browser cookie auth** for Instagram and private content (Firefox, Chrome, Chromium)
-- **Download queue** for batch processing
+- **Download queue** for batch processing — survives a restart and can be cancelled item by item
 - **System notifications** on completion
 - **Quality selector** — best, 1080p, 720p, 480p
-- **No manual yt-dlp setup** — it is bundled in the package
+- **No manual yt-dlp setup** — it is bundled in the package, and *Settings → Check for updates* refreshes it (checksum-verified)
 
 ---
 
@@ -34,7 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/light-scrap-vidz/light-scrap-vidz/m
 | Linux — Debian / Ubuntu | `.deb` package |
 | Linux — other distributions | `.AppImage` in `~/.local/bin`, registered in your applications menu |
 
-Re-run the exact same command to upgrade to the latest release.
+Re-run the exact same command to upgrade to the latest release. The app can also update itself from *Settings → Check for updates*: macOS and AppImage installs update in place (signed), `.deb` and `.rpm` installs are sent to the release page.
 
 > Apple Silicon only (M1 or later).
 
@@ -140,13 +140,23 @@ npm run tauri dev
 npm run tauri build
 ```
 
+### Tests
+
+```bash
+npm test                                   # frontend (Vitest) — includes the IPC contract with the Rust sources
+cargo test --manifest-path src-tauri/Cargo.toml   # backend, including a fake yt-dlp run end to end
+```
+
+The Rust side needs the Tauri system dependencies and a yt-dlp sidecar under `src-tauri/binaries/`
+(`yt-dlp-lsv-<target-triple>`), as the CI does.
+
 ### Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Vite dev server only |
 | `npm run build` | Type-check and build the frontend |
-| `npm run test` | Vitest unit tests |
+| `npm run test` | Vitest unit and contract tests |
 | `npm run test:watch` | Watch mode |
 | `npm run lint` | ESLint over `src/` (no warnings allowed) |
 | `npm run format` | Prettier over `src/` |
@@ -155,9 +165,17 @@ npm run tauri build
 
 ## CI / CD
 
-- **CI** (`ci.yml`) runs on every push and pull request: lint, type-check and unit tests.
+- **CI** (`ci.yml`) runs on every push and pull request: ESLint, `tsc`, Vitest and a frontend build; `cargo fmt --check`, clippy and `cargo test` on Linux; `cargo test` on macOS. Third-party actions are pinned by commit SHA.
 - **Pages** (`pages.yml`) deploys `docs/` to GitHub Pages on every push to `main`.
 - **Release** is triggered by pushing a `v*.*.*` tag: builds the `.deb`, `.AppImage` and `.rpm` on Linux and the app archive on macOS, and attaches them to the GitHub release.
+
+---
+
+## Privacy and security notes
+
+- *Sign-in* uses `--cookies-from-browser`, which lets yt-dlp read the **whole** cookie jar of the chosen browser; pick *None* if you do not need it.
+- Fonts are bundled and thumbnails go through the app (and are cached under the app cache folder), so the window itself does not contact third-party hosts.
+- The webview runs under a strict Content-Security-Policy; the *Open file* action only opens folders and media files.
 
 ---
 
