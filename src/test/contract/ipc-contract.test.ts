@@ -62,7 +62,7 @@ describe('IPC contract with the Rust backend', () => {
   });
 
   it('does not send the unused formats list to the frontend', () => {
-    expect(rust('commands/fetch_info.rs')).toMatch(/skip_serializing\)\]\s+pub formats/);
+    expect(rust('commands/fetch_info.rs')).toMatch(/skip_serializing\)\](?:\s*#\[[^\]]*\])*\s+pub formats/);
   });
 
   it('matches the video and playlist info fields', () => {
