@@ -28,6 +28,7 @@ tokio = { version = "1", features = ["macros", "process", "io-util", "sync", "ti
 regex = "1"
 base64 = "0.22"
 sha2 = "0.10"
+ts-rs = "12"
 
 [dev-dependencies]
 # unit tests via cargo test

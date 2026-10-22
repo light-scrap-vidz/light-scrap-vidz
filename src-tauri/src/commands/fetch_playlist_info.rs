@@ -1,8 +1,10 @@
 use super::fetch_slots::{run_cancellable, FetchSlots};
 use crate::ytdlp::{builder::PlaylistInfoCommand, finder::YtDlpBinary};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, TS)]
+#[ts(export)]
 pub struct PlaylistEntry {
     #[serde(default)]
     pub id: String,
@@ -12,7 +14,8 @@ pub struct PlaylistEntry {
     pub url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[ts(export, rename = "PlaylistInfo")]
 pub struct PlaylistInfoResponse {
     #[serde(rename(deserialize = "_type", serialize = "kind"), default)]
     pub kind: String,

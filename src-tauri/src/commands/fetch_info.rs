@@ -1,6 +1,7 @@
 use super::fetch_slots::{run_cancellable, FetchSlots};
 use crate::ytdlp::{builder::InfoCommand, finder::YtDlpBinary};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FormatInfo {
@@ -13,7 +14,8 @@ pub struct FormatInfo {
     pub acodec: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[ts(export, rename = "VideoInfo")]
 pub struct VideoInfoResponse {
     pub id: String,
     pub title: String,
@@ -30,6 +32,7 @@ pub struct VideoInfoResponse {
     /// Lu pour le contrat de désérialisation, mais jamais envoyé : l'interface ne s'en sert
     /// pas et la liste dépasse souvent plusieurs centaines d'entrées.
     #[serde(default, skip_serializing)]
+    #[ts(skip)]
     #[allow(dead_code)]
     pub formats: Vec<FormatInfo>,
 }

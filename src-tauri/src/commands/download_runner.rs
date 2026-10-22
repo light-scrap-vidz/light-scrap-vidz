@@ -5,12 +5,14 @@ use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Child;
 use tokio::sync::Mutex;
+use ts_rs::TS;
 
 use crate::ytdlp::parser::{parse_destination_line, parse_playlist_item_line, parse_progress_line};
 
 pub type DownloadRegistry = Arc<Mutex<HashMap<String, Child>>>;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename = "DownloadProgress")]
 pub struct ProgressPayload {
     pub download_id: String,
     pub percent: f32,
@@ -21,13 +23,15 @@ pub struct ProgressPayload {
     pub total_items: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename = "DownloadComplete")]
 pub struct CompletePayload {
     pub download_id: String,
     pub filepath: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename = "DownloadError")]
 pub struct ErrorPayload {
     pub download_id: String,
     pub message: String,
