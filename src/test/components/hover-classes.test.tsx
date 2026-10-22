@@ -22,7 +22,7 @@ vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
 /** Hover feedback lives in `index.css` (`:hover` cannot be exercised in jsdom). These tests
  * check that every control carries a class and that every class has a rule, so a control
  * can no longer lose its feedback — or point at a rule that does not exist — unnoticed. */
-const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf8');
+const css = readFileSync(resolve(import.meta.dirname, '../../index.css'), 'utf8');
 const hasRule = (cls: string) => new RegExp(`\\.${cls}:hover`).test(css);
 
 const entry: HistoryEntry = {

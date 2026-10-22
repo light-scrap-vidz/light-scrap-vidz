@@ -1,13 +1,13 @@
 use std::path::{Path, PathBuf};
 
-use sha2::{Digest, Sha256};
+use super::update_ytdlp::sha256_hex;
 
 /// Nombre maximal de vignettes gardées sur disque.
 pub const MAX_ENTRIES: usize = 300;
 
 /// Fichier de cache d'une URL : le nom est le SHA-256 de l'URL, donc sans caractère risqué.
 pub fn cache_file(dir: &Path, url: &str) -> PathBuf {
-    dir.join(format!("{:x}", Sha256::digest(url.as_bytes())))
+    dir.join(sha256_hex(url.as_bytes()))
 }
 
 pub fn read(dir: &Path, url: &str) -> Option<Vec<u8>> {

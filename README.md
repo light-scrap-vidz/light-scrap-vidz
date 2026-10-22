@@ -117,7 +117,7 @@ update-desktop-database ~/.local/share/applications
 ### Prerequisites
 
 - [Rust](https://rustup.rs) stable
-- [Node.js](https://nodejs.org) 20+
+- [Node.js](https://nodejs.org) 22.15+ (24 LTS recommended)
 - The [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS
 
 ### Setup

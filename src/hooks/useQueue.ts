@@ -30,7 +30,11 @@ export function useQueue(): UseQueueReturn {
     null,
   );
   const addEntryRef = useRef(addEntry);
-  addEntryRef.current = addEntry;
+  const processNextRef = useRef<() => Promise<void>>(async () => {});
+
+  useEffect(() => {
+    addEntryRef.current = addEntry;
+  }, [addEntry]);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -62,7 +66,9 @@ export function useQueue(): UseQueueReturn {
       );
       processingRef.current = false;
       // Schedule next tick to avoid re-entrancy
-      setTimeout(() => { void processNext(); }, 50);
+      setTimeout(() => {
+        void processNextRef.current();
+      }, 50);
     };
 
     currentDownload.current = {
@@ -117,6 +123,10 @@ export function useQueue(): UseQueueReturn {
       onDone('error', parseYtdlpError(err instanceof Error ? err.message : String(err)));
     }
   }, []);
+
+  useEffect(() => {
+    processNextRef.current = processNext;
+  }, [processNext]);
 
   // Rows restored from the previous session pick up where they left off.
   useEffect(() => {

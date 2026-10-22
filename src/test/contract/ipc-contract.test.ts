@@ -5,8 +5,8 @@ import { EVENT_COMPLETE, EVENT_ERROR, EVENT_PROGRESS } from '@/lib/events';
 
 /** The frontend and the Rust backend are written by hand on both sides. These tests read
  * the Rust sources so that a rename or a removed field fails here, not at runtime. */
-const rust = (file: string) => readFileSync(resolve(__dirname, '../../../src-tauri/src', file), 'utf8');
-const front = (file: string) => readFileSync(resolve(__dirname, '../../', file), 'utf8');
+const rust = (file: string) => readFileSync(resolve(import.meta.dirname, '../../../src-tauri/src', file), 'utf8');
+const front = (file: string) => readFileSync(resolve(import.meta.dirname, '../../', file), 'utf8');
 
 function structFields(source: string, name: string): string[] {
   const body = new RegExp(`pub struct ${name} \\{([^}]*)\\}`).exec(source)?.[1] ?? '';

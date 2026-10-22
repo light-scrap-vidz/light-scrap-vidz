@@ -163,9 +163,12 @@ export function useAppFlow() {
     setSelectedPlaylistUrls([]);
   }, [resetInfo, resetPlInfo, resetDownload]);
 
-  useEffect(() => {
+  // Show the queue tab when the queue becomes active (adjusted while rendering).
+  const [queueWasActive, setQueueWasActive] = useState(queue.isActive);
+  if (queue.isActive !== queueWasActive) {
+    setQueueWasActive(queue.isActive);
     if (queue.isActive) setTab('queue');
-  }, [queue.isActive]);
+  }
 
   const isPlaylist = urlKind === 'playlist';
   const playlistTotal = plInfo ? (plInfo.playlist_count ?? plInfo.entries?.length ?? 0) : 0;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { openFolder } from '@/lib/tauri-commands';
 import type { HistoryEntry } from '@/types';
 import { useLang, useT } from '@/lib/locale';
@@ -28,9 +28,13 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
   const { lang } = useLang();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Forget the clicked row once the lookup ends (adjusting state while rendering, rather
+  // than in an effect, avoids an extra render with stale state).
+  const [wasLoading, setWasLoading] = useState(!!isLoading);
+  if (!!isLoading !== wasLoading) {
+    setWasLoading(!!isLoading);
     if (!isLoading) setPendingId(null);
-  }, [isLoading]);
+  }
 
   const handleSelect = (entry: HistoryEntry) => {
     if (!onSelect || isLoading) return;

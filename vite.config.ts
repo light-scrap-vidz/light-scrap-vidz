@@ -6,7 +6,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
   clearScreen: false,
   server: {
@@ -17,7 +17,7 @@ export default defineConfig({
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
     target: process.env['TAURI_ENV_PLATFORM'] === 'windows' ? 'chrome105' : 'safari13',
-    minify: !process.env['TAURI_ENV_DEBUG'] ? 'esbuild' : false,
+    minify: !process.env['TAURI_ENV_DEBUG'] ? 'oxc' : false,
     sourcemap: !!process.env['TAURI_ENV_DEBUG'],
   },
 });

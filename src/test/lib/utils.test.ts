@@ -1,24 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatDuration, formatBytes, newId } from '@/lib/utils';
-
-describe('cn', () => {
-  it('joins class names', () => {
-    expect(cn('a', 'b')).toBe('a b');
-  });
-
-  it('drops falsy values', () => {
-    expect(cn('a', false, undefined, null, '', 'b')).toBe('a b');
-  });
-
-  it('lets the last conflicting Tailwind utility win', () => {
-    expect(cn('p-2', 'p-4')).toBe('p-4');
-    expect(cn('text-red-500', 'text-blue-500')).toBe('text-blue-500');
-  });
-
-  it('accepts arrays and conditional objects', () => {
-    expect(cn(['a', 'b'], { c: true, d: false })).toBe('a b c');
-  });
-});
+import { formatDuration, newId } from '@/lib/utils';
 
 describe('formatDuration', () => {
   it('formats under a minute with a zero minute field', () => {
@@ -41,29 +22,6 @@ describe('formatDuration', () => {
 
   it('truncates fractional seconds', () => {
     expect(formatDuration(90.9)).toBe('1:30');
-  });
-});
-
-describe('formatBytes', () => {
-  it('short-circuits on zero', () => {
-    expect(formatBytes(0)).toBe('0 B');
-  });
-
-  it('keeps small values in bytes', () => {
-    expect(formatBytes(1)).toBe('1 B');
-    expect(formatBytes(1023)).toBe('1023 B');
-  });
-
-  it('steps up through the units at each power of 1024', () => {
-    expect(formatBytes(1024)).toBe('1 KB');
-    expect(formatBytes(1024 ** 2)).toBe('1 MB');
-    expect(formatBytes(1024 ** 3)).toBe('1 GB');
-  });
-
-  it('rounds to a single decimal and trims a trailing zero', () => {
-    expect(formatBytes(1536)).toBe('1.5 KB');
-    expect(formatBytes(1024 * 1024 * 2.25)).toBe('2.3 MB');
-    expect(formatBytes(2048)).toBe('2 KB');
   });
 });
 
