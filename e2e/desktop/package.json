@@ -1,0 +1,11 @@
+{
+  "name": "light-scrap-vidz-e2e-desktop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-timeout=120000 app.e2e.mjs"
+  },
+  "devDependencies": {
+    "webdriverio": "^9.0.0"
+  }
+}

@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'src-tauri/', 'node_modules/'] },
+  { ignores: ['dist/', 'src-tauri/', '**/node_modules/', 'test-results/', 'playwright-report/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -17,4 +17,5 @@ export default tseslint.config(
       globals: { ...globals.browser },
     },
   },
+  { files: ['e2e/**/*.mjs', 'e2e/**/*.ts', 'playwright.config.ts'], languageOptions: { globals: { ...globals.node } } },
 );
