@@ -4,7 +4,7 @@ name: E2E (desktop)
 # tauri-driver. yt-dlp is replaced by a fake (YTDLP_PATH), so it needs no network.
 on:
   push:
-    branches: [main, e2e-wip]
+    branches: [main]
     paths:
       - 'src/**'
       - 'src-tauri/**'
