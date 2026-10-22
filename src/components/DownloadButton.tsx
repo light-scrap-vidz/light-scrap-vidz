@@ -31,29 +31,19 @@ export function DownloadButton({
   return (
     <button
       onClick={onDownload}
-      className="lsv-hover-lift"
+      className={`lsv-hover-lift w-full h-[56px] rounded-[14px] border-0 bg-accent text-accent-ink text-[15.5px] font-[700] font-sans flex items-center justify-center gap-[10px] [box-shadow:0_10px_28px_rgba(201,242,94,0.32)] [transition:all_.15s] ${disabled ? 'cursor-default opacity-50' : 'cursor-pointer'}`}
       disabled={disabled}
-      style={{
-        width: '100%',
-        height: 56,
-        borderRadius: 14,
-        border: 'none',
-        background: 'var(--accent)',
-        color: 'var(--accent-ink)',
-        fontSize: '15.5px',
-        fontWeight: 700,
-        fontFamily: "'Hanken Grotesk', sans-serif",
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        boxShadow: '0 10px 28px rgba(201,242,94,0.32)',
-        transition: 'all .15s',
-      }}
     >
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M12 3v12" />
         <path d="M7 11l5 5 5-5" />
         <path d="M5 21h14" />

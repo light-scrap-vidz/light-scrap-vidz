@@ -17,32 +17,19 @@ export function ProgressCard({ status, progress }: ProgressCardProps) {
   const eta = progress?.eta && progress.eta !== 'Unknown' ? progress.eta : null;
 
   return (
-    <div style={{ width: '100%', maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="w-full max-w-[460px] flex flex-col gap-[16px]">
       {/* Percent + speed/eta row */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline' }}>
-          <span
-            style={{
-              fontSize: '52px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 600,
-              color: 'var(--text-strong)',
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-            }}
-          >
+      <div className="flex items-end justify-between">
+        <div className="flex items-baseline">
+          <span className="text-[52px] font-mono font-[600] text-fg-strong [letter-spacing:-0.03em] [line-height:1]">
             {percent.toFixed(0)}
           </span>
-          <span style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-dim)', marginLeft: 2 }}>%</span>
+          <span className="text-[22px] font-[600] text-dim ml-[2px]">%</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-          {speed && (
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--accent)', fontFamily: "'JetBrains Mono', monospace" }}>
-              {speed}
-            </span>
-          )}
+        <div className="flex flex-col items-end gap-[3px]">
+          {speed && <span className="text-[14px] font-[600] text-accent font-mono">{speed}</span>}
           {eta && (
-            <span style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontFamily: "'JetBrains Mono', monospace" }}>
+            <span className="text-[11.5px] text-dim font-mono">
               {t('dl.eta')} {eta}
             </span>
           )}
@@ -50,37 +37,22 @@ export function ProgressCard({ status, progress }: ProgressCardProps) {
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: 10, borderRadius: 6, background: '#26241F', overflow: 'hidden' }}>
+      <div className="h-[10px] rounded-[6px] bg-[#26241F] overflow-hidden">
         <div
-          style={{
-            height: '100%',
-            width: `${percent}%`,
-            borderRadius: 6,
-            background: 'linear-gradient(90deg, rgba(201,242,94,0.8), #C9F25E)',
-            boxShadow: '0 0 18px rgba(201,242,94,0.32)',
-            transition: 'width 0.25s linear',
-          }}
+          className="h-full rounded-[6px] [background:linear-gradient(90deg,_rgba(201,242,94,0.8),_#C9F25E)] [box-shadow:0_0_18px_rgba(201,242,94,0.32)] [transition:width_0.25s_linear]"
+          style={{ width: `${percent}%` }}
         />
       </div>
 
       {progress?.current_item != null && progress.total_items != null && (
-        <span style={{ fontSize: '11.5px', color: 'var(--text-hover)', fontFamily: "'JetBrains Mono', monospace" }}>
+        <span className="text-[11.5px] text-hover font-mono">
           {t('dl.item', { current: progress.current_item, total: progress.total_items })}
         </span>
       )}
 
       {/* Filename */}
       {progress?.filename && (
-        <span
-          style={{
-            fontSize: '11.5px',
-            fontFamily: "'JetBrains Mono', monospace",
-            color: 'var(--text-dim)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
+        <span className="text-[11.5px] font-mono text-dim whitespace-nowrap overflow-hidden text-ellipsis">
           {progress.filename}
         </span>
       )}

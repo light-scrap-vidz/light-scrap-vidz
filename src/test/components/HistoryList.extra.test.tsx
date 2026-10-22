@@ -93,9 +93,7 @@ describe('HistoryList — selecting an entry', () => {
       />,
     );
 
-    expect(screen.getByText('Another clip').closest('div[style*="opacity"]')).toHaveStyle({
-      opacity: '0.5',
-    });
+    expect(screen.getByText('Another clip').closest('[role="button"]')).toHaveClass('opacity-50');
   });
 
   it('does nothing when no select handler is given', () => {

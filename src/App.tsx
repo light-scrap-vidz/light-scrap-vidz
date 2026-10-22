@@ -12,16 +12,7 @@ function AppScreen() {
   const { view } = flow;
 
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        background: 'var(--bg)',
-        position: 'relative',
-      }}
-    >
+    <div className="h-screen flex flex-col overflow-hidden bg-app relative">
       {flow.settingsOpen && (
         <SettingsSheet
           open={flow.settingsOpen}
@@ -41,7 +32,7 @@ function AppScreen() {
         onOpenSettings={() => flow.setSettingsOpen(true)}
       />
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '22px 24px 0', overflow: 'hidden' }}>
+      <div className="flex-1 min-h-[0px] flex flex-col [padding:22px_24px_0] overflow-hidden">
         {view === 'home' && <HomeView key="home" flow={flow} />}
         {view === 'fetched' && <FetchedView key="fetched" flow={flow} />}
         {view === 'downloading' && <DownloadingView key="downloading" flow={flow} />}

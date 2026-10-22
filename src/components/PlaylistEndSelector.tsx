@@ -16,27 +16,17 @@ export function PlaylistEndSelector({ value, onChange, disabled }: PlaylistEndSe
   ];
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-mid)', flexShrink: 0 }}>{t('opt.count')}</span>
+    <div className="flex items-center justify-between gap-[12px]">
+      <span className="text-[13px] font-[600] text-fg-mid shrink-0">{t('opt.count')}</span>
       <select
         value={String(value)}
         onChange={(e) => onChange(Number(e.target.value))}
         disabled={disabled}
         aria-label={t('opt.countAria')}
-        style={{
-          background: 'var(--surface-2)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          color: 'var(--text-soft)',
-          borderRadius: 8,
-          fontSize: '12.5px',
-          fontWeight: 600,
-          padding: '6px 10px',
-          cursor: disabled ? 'default' : 'pointer',
-          outline: 'none',
-        }}
+        className={`bg-surface-2 border border-[rgba(255,255,255,0.10)] text-fg-soft rounded-[8px] text-[12.5px] font-[600] [padding:6px_10px] [outline:none] ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value} style={{ background: 'var(--surface)' }}>
+          <option key={opt.value} value={opt.value} className="bg-surface">
             {opt.label}
           </option>
         ))}

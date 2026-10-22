@@ -4,30 +4,13 @@ import { QueuePanel } from '@/components/QueuePanel';
 import { useT } from '@/lib/locale';
 import type { Flow } from '@/hooks/useAppFlow';
 
-const tabButton = (active: boolean): React.CSSProperties => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '6px 13px',
-  borderRadius: 8,
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '12.5px',
-  fontWeight: 600,
-  background: active ? 'var(--surface-3)' : 'transparent',
-  color: active ? '#F0ECE4' : 'var(--text-muted)',
-  transition: 'all .15s',
-});
+const tabButton = (active: boolean) =>
+  `flex items-center gap-1.5 px-[13px] py-1.5 rounded-lg border-0 cursor-pointer text-[12.5px] font-semibold transition-all duration-150 ${
+    active ? 'bg-surface-3 text-fg-strong' : 'bg-transparent text-muted'
+  }`;
 
-const linkButton: React.CSSProperties = {
-  background: 'transparent',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '11.5px',
-  fontWeight: 600,
-  color: 'var(--text-dim)',
-  transition: 'all .15s',
-};
+const linkButton =
+  'lsv-hover-link bg-transparent border-0 cursor-pointer text-[11.5px] font-semibold text-dim transition-all duration-150';
 
 export function HomeView({ flow }: { flow: Flow }) {
   const t = useT();
@@ -36,21 +19,41 @@ export function HomeView({ flow }: { flow: Flow }) {
   const doneCount = queue.items.filter((i) => i.status === 'done' || i.status === 'error').length;
 
   return (
-    <div className="lsv-view" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>
+    <div className="lsv-view flex-1 flex flex-col gap-[16px] min-h-[0px]">
       <UrlInput onSubmit={flow.handleFetchInfo} isLoading={flow.isFetching} showTryChips />
-      {flow.fetchError && <div style={{ fontSize: '11.5px', color: 'var(--danger)', userSelect: 'text' }}>{t(flow.fetchError)}</div>}
+      {flow.fetchError && (
+        <div className="text-[11.5px] text-danger select-text">{t(flow.fetchError)}</div>
+      )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 11 }}>
-          <button onClick={() => setTab('recent')} style={tabButton(tab === 'recent')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex items-center justify-between">
+        <div className="flex gap-[4px] p-[4px] bg-surface border border-[rgba(255,255,255,0.06)] rounded-[11px]">
+          <button onClick={() => setTab('recent')} className={tabButton(tab === 'recent')}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="9" />
               <path d="M12 7v5l3 2" />
             </svg>
             {t('tab.recent')}
           </button>
-          <button onClick={() => setTab('queue')} style={tabButton(tab === 'queue')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button onClick={() => setTab('queue')} className={tabButton(tab === 'queue')}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M8 6h13" />
               <path d="M8 12h13" />
               <path d="M8 18h13" />
@@ -60,7 +63,7 @@ export function HomeView({ flow }: { flow: Flow }) {
             </svg>
             {t('tab.queue')}
             {pendingCount > 0 && (
-              <span style={{ minWidth: 17, height: 17, padding: '0 4px', borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: '10px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="min-w-[17px] h-[17px] [padding:0_4px] rounded-full bg-accent text-accent-ink text-[10px] font-[800] font-mono inline-flex items-center justify-center">
                 {pendingCount}
               </span>
             )}
@@ -68,20 +71,25 @@ export function HomeView({ flow }: { flow: Flow }) {
         </div>
 
         {tab === 'recent' && entries.length > 0 && (
-          <button onClick={flow.clearHistory} className="lsv-hover-link" style={linkButton}>
+          <button onClick={flow.clearHistory} className={linkButton}>
             {t('tab.clearAll')}
           </button>
         )}
         {tab === 'queue' && queue.items.length > 0 && (
-          <button onClick={doneCount > 0 ? queue.clearDone : queue.clearAll} className="lsv-hover-link" style={linkButton}>
+          <button onClick={doneCount > 0 ? queue.clearDone : queue.clearAll} className={linkButton}>
             {t(doneCount > 0 ? 'tab.clearDone' : 'tab.clearAll')}
           </button>
         )}
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingBottom: 22 }}>
+      <div className="flex-1 min-h-[0px] overflow-y-auto flex flex-col [padding-bottom:22px]">
         {tab === 'recent' ? (
-          <HistoryList entries={entries} onClear={flow.clearHistory} onSelect={flow.handleFetchInfo} isLoading={flow.isFetching} />
+          <HistoryList
+            entries={entries}
+            onClear={flow.clearHistory}
+            onSelect={flow.handleFetchInfo}
+            isLoading={flow.isFetching}
+          />
         ) : (
           <QueuePanel
             items={queue.items}

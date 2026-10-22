@@ -121,12 +121,11 @@ describe('PlaylistPreview — entry list', () => {
     expect(screen.queryByText('YouTube')).not.toBeInTheDocument();
   });
 
-  it('leaves a selected row tinted on hover', () => {
+  it('keeps a selected row tinted and exempt from the hover highlight', () => {
     setup({ selectedUrls: ['https://youtu.be/a'] });
     const row = screen.getByText('First').closest('label')!;
 
-    fireEvent.mouseEnter(row);
-
-    expect(row).toHaveStyle({ background: 'rgba(201, 242, 94, 0.06)' });
+    expect(row).toHaveClass('bg-[rgba(201,242,94,0.06)]');
+    expect(row).toHaveAttribute('data-checked', 'true');
   });
 });

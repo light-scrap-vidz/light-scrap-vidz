@@ -29,9 +29,9 @@ export function BrowserCookieSelector({
       : ALL_OPTIONS.filter((o) => o.browser !== 'safari');
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-mid)', flexShrink: 0 }}>{t('opt.signIn')}</span>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+    <div className="flex items-center justify-between gap-[12px]">
+      <span className="text-[13px] font-[600] text-fg-mid shrink-0">{t('opt.signIn')}</span>
+      <div className="flex gap-[6px] flex-wrap justify-end">
         {options.map((opt) => {
           const active = value === opt.value;
           return (
@@ -40,17 +40,7 @@ export function BrowserCookieSelector({
               onClick={() => onChange(opt.value)}
               aria-pressed={active}
               disabled={disabled}
-              style={{
-                padding: '5px 11px',
-                borderRadius: 8,
-                cursor: disabled ? 'default' : 'pointer',
-                fontSize: '12.5px',
-                fontWeight: 600,
-                background: active ? 'var(--accent)' : 'var(--surface-2)',
-                color: active ? 'var(--accent-ink)' : 'var(--text-chip)',
-                border: active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.10)',
-                transition: 'all .15s',
-              }}
+              className={`[padding:5px_11px] rounded-[8px] text-[12.5px] font-[600] [transition:all_.15s] ${(disabled ? 'cursor-default' : 'cursor-pointer') + ' ' + (active ? 'bg-accent text-accent-ink border border-transparent' : 'bg-surface-2 text-chip border border-[rgba(255,255,255,0.10)]')}`}
             >
               {t(opt.labelKey)}
             </button>

@@ -4,21 +4,10 @@ import type { Platform } from '@/types';
 /** Striped stand-in for a missing thumbnail, tinted with the platform colour. */
 export function ThumbPlaceholder({ platform }: { platform: Platform }) {
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        background: 'repeating-linear-gradient(135deg, #211F1A 0 7px, #1A1815 7px 14px)',
-        position: 'relative',
-      }}
-    >
+    <div className="w-full h-full [background:repeating-linear-gradient(135deg,_#211F1A_0_7px,_#1A1815_7px_14px)] relative">
       <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: PLATFORM_TINT[platform] ?? PLATFORM_TINT.unknown,
-          opacity: 0.12,
-        }}
+        className="absolute inset-0 opacity-[0.12]"
+        style={{ background: PLATFORM_TINT[platform] ?? PLATFORM_TINT.unknown }}
       />
     </div>
   );

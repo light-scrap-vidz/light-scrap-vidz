@@ -15,14 +15,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div
-        role="alert"
-        style={{ padding: 24, color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 12 }}
-      >
-        <div style={{ fontWeight: 700 }}>Something went wrong.</div>
+      <div role="alert" className="p-[24px] text-fg flex flex-col gap-[12px]">
+        <div className="font-[700]">Something went wrong.</div>
         <button
           onClick={() => window.location.reload()}
-          style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 8, cursor: 'pointer' }}
+          className="[align-self:flex-start] [padding:8px_16px] rounded-[8px] cursor-pointer"
         >
           Reload
         </button>

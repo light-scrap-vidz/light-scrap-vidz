@@ -52,25 +52,21 @@ export function UrlInput({ onSubmit, isLoading, disabled, showTryChips }: UrlInp
   const inputDisabled = disabled || isLoading;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
+    <div className="flex flex-col gap-[12px]">
+      <div className="flex gap-[8px]">
         {/* Input */}
-        <div
-          className="lsv-field"
-          style={{
-            flex: 1,
-            height: 54,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 11,
-            padding: '0 16px',
-            background: '#1E1D18',
-            borderRadius: 13,
-            border: '1px solid rgba(255,255,255,0.08)',
-            transition: 'all .15s',
-          }}
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#857F75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <div className="lsv-field flex-1 h-[54px] flex items-center gap-[11px] [padding:0_16px] bg-[#1E1D18] rounded-[13px] border border-[rgba(255,255,255,0.08)] [transition:all_.15s]">
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#857F75"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="shrink-0"
+          >
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
           </svg>
@@ -81,42 +77,28 @@ export function UrlInput({ onSubmit, isLoading, disabled, showTryChips }: UrlInp
             placeholder={t('url.placeholder')}
             disabled={inputDisabled}
             aria-label={t('url.aria')}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--text)',
-              fontSize: '14px',
-              fontFamily: "'Hanken Grotesk', sans-serif",
-            }}
+            className="flex-1 min-w-[0px] bg-transparent border-0 [outline:none] text-fg text-[14px] font-sans"
           />
         </div>
 
         {/* Paste button */}
         <button
           onClick={handlePaste}
-          className="lsv-hover-outline"
+          className={`lsv-hover-outline w-[54px] h-[54px] shrink-0 rounded-[13px] bg-surface-2 border border-[rgba(255,255,255,0.10)] flex items-center justify-center text-hover [transition:all_.15s] ${inputDisabled ? 'cursor-default' : 'cursor-pointer'}`}
           disabled={inputDisabled}
           aria-label={t('url.paste')}
           title={t('url.paste')}
-          style={{
-            width: 54,
-            height: 54,
-            flexShrink: 0,
-            borderRadius: 13,
-            background: 'var(--surface-2)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            cursor: inputDisabled ? 'default' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-hover)',
-            transition: 'all .15s',
-          }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
           </svg>
@@ -125,30 +107,23 @@ export function UrlInput({ onSubmit, isLoading, disabled, showTryChips }: UrlInp
         {/* Submit button */}
         <button
           onClick={handleSubmit}
-          className="lsv-hover-lift"
+          className={`lsv-hover-lift w-[54px] h-[54px] shrink-0 rounded-[13px] bg-accent border-0 flex items-center justify-center text-accent-ink [box-shadow:0_6px_20px_rgba(201,242,94,0.32)] [transition:all_.15s] ${(inputDisabled || !value.trim() ? 'cursor-default' : 'cursor-pointer') + ' ' + (!value.trim() ? 'opacity-50' : '')}`}
           disabled={inputDisabled || !value.trim()}
           aria-label={t('url.fetch')}
-          style={{
-            width: 54,
-            height: 54,
-            flexShrink: 0,
-            borderRadius: 13,
-            background: 'var(--accent)',
-            border: 'none',
-            cursor: inputDisabled || !value.trim() ? 'default' : 'pointer',
-            opacity: !value.trim() ? 0.5 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--accent-ink)',
-            boxShadow: '0 6px 20px rgba(201,242,94,0.32)',
-            transition: 'all .15s',
-          }}
         >
           {isLoading ? (
             <Spinner tone="ink" />
           ) : (
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="19"
+              height="19"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M5 12h14" />
               <path d="M12 5l7 7-7 7" />
             </svg>
@@ -157,26 +132,17 @@ export function UrlInput({ onSubmit, isLoading, disabled, showTryChips }: UrlInp
       </div>
 
       {showTryChips && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: '11.5px', color: 'var(--text-faint)', fontWeight: 500, marginRight: 2 }}>{t('url.supports')}</span>
+        <div className="flex flex-wrap items-center gap-[6px]">
+          <span className="text-[11.5px] text-faint font-[500] mr-[2px]">{t('url.supports')}</span>
           {SUPPORTED_PLATFORMS.map((p) => (
             <span
               key={p}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '3px 9px',
-                background: 'var(--surface)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 7,
-                color: 'var(--text-muted)',
-                fontSize: '11px',
-                fontWeight: 600,
-                userSelect: 'none',
-              }}
+              className="inline-flex items-center gap-[5px] [padding:3px_9px] bg-surface border border-[rgba(255,255,255,0.06)] rounded-[7px] text-muted text-[11px] font-[600] select-none"
             >
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: PLATFORM_TINT[p], flexShrink: 0, opacity: 0.85 }} />
+              <span
+                className="w-[5px] h-[5px] rounded-full shrink-0 opacity-[0.85]"
+                style={{ background: PLATFORM_TINT[p] }}
+              />
               {PLATFORM_META[p].label}
             </span>
           ))}

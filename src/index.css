@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+@theme inline {
+  --color-app: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-fg: var(--text);
+  --color-fg-strong: var(--text-strong);
+  --color-fg-soft: var(--text-soft);
+  --color-fg-mid: var(--text-mid);
+  --color-muted: var(--text-muted);
+  --color-dim: var(--text-dim);
+  --color-faint: var(--text-faint);
+  --color-chip: var(--text-chip);
+  --color-hover: var(--text-hover);
+  --color-danger: var(--danger);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+}
+
+@theme {
+  --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
 :root {
   --bg: #141310;
   --surface: #1A1916;

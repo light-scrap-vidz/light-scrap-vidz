@@ -25,24 +25,19 @@ interface SettingsSheetProps {
 
 const RELEASES_URL = 'https://github.com/light-scrap-vidz/light-scrap-vidz/releases/latest';
 
-type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'up-to-date' | 'error';
+type UpdateState =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'installing'
+  | 'up-to-date'
+  | 'error';
 
-const sectionLabelStyle: React.CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  color: 'var(--text-dim)',
-  marginTop: 14,
-  marginBottom: 2,
-};
+const sectionLabel =
+  'text-[11px] font-[700] uppercase tracking-[0.06em] text-dim mt-[14px] mb-[2px]';
 
-const cardStyle: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 11,
-  border: '1px solid rgba(255,255,255,0.06)',
-  padding: 13,
-};
+const card = 'bg-surface rounded-[11px] border border-[rgba(255,255,255,0.06)] p-[13px]';
 
 export function SettingsSheet({
   open: isOpen,
@@ -63,12 +58,18 @@ export function SettingsSheet({
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
-  const [ytdlpStatus, setYtdlpStatus] = useState<'idle' | 'updating' | 'updated' | 'failed'>('idle');
+  const [ytdlpStatus, setYtdlpStatus] = useState<'idle' | 'updating' | 'updated' | 'failed'>(
+    'idle',
+  );
 
   useEffect(() => {
     if (isOpen && !version) {
-      void getVersion().then(setVersion).catch(() => {});
-      void getInstallKind().then(setInstallKind).catch(() => setInstallKind('deb'));
+      void getVersion()
+        .then(setVersion)
+        .catch(() => {});
+      void getInstallKind()
+        .then(setInstallKind)
+        .catch(() => setInstallKind('deb'));
     }
   }, [isOpen, version]);
 
@@ -140,21 +141,29 @@ export function SettingsSheet({
 
   const updateLabel = () => {
     switch (updateState) {
-      case 'checking': return t('update.checking');
+      case 'checking':
+        return t('update.checking');
       case 'downloading':
         return downloadProgress > 0
           ? t('update.downloadingPct', { percent: downloadProgress })
           : t('update.downloading');
-      case 'installing': return t('update.installing');
-      case 'up-to-date': return t('update.upToDate');
-      case 'error': return t('update.retry');
+      case 'installing':
+        return t('update.installing');
+      case 'up-to-date':
+        return t('update.upToDate');
+      case 'error':
+        return t('update.retry');
       case 'available':
-        return updateVersion ? t('update.availableTo', { version: updateVersion }) : t('update.available');
-      default: return t('update.check');
+        return updateVersion
+          ? t('update.availableTo', { version: updateVersion })
+          : t('update.available');
+      default:
+        return t('update.check');
     }
   };
 
-  const isUpdating = updateState === 'checking' || updateState === 'downloading' || updateState === 'installing';
+  const isUpdating =
+    updateState === 'checking' || updateState === 'downloading' || updateState === 'installing';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -170,75 +179,65 @@ export function SettingsSheet({
   return (
     <>
       {/* Overlay */}
-      <div
-        onClick={onClose}
-        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 }}
-      />
+      <div onClick={onClose} className="absolute inset-0 bg-[rgba(0,0,0,0.55)] z-[40]" />
 
       {/* Panel */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: 330,
-          height: '100%',
-          background: '#161512',
-          borderLeft: '1px solid rgba(255,255,255,0.09)',
-          boxShadow: '-24px 0 60px rgba(0,0,0,0.5)',
-          padding: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          zIndex: 41,
-          overflowY: 'auto',
-          animation: 'lsv-fade 0.18s ease',
-        }}
-      >
+      <div className="absolute top-0 right-0 w-[330px] h-full bg-[#161512] border-l border-l-[rgba(255,255,255,0.09)] [box-shadow:-24px_0_60px_rgba(0,0,0,0.5)] p-[20px] flex flex-col gap-[6px] z-[41] overflow-y-auto [animation:lsv-fade_0.18s_ease]">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-strong)' }}>{t('set.title')}</span>
+        <div className="flex items-center justify-between">
+          <span className="text-[16px] font-[700] text-fg-strong">{t('set.title')}</span>
           <button
             onClick={onClose}
             aria-label={t('set.close')}
-            style={{
-              width: 30, height: 30, borderRadius: 8, background: 'var(--surface-2)', border: 'none',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-hover)',
-            }}
+            className="w-[30px] h-[30px] rounded-[8px] bg-surface-2 border-0 cursor-pointer flex items-center justify-center text-hover"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M18 6L6 18" /><path d="M6 6l12 12" />
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M18 6L6 18" />
+              <path d="M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* DOWNLOADS section */}
-        <div style={sectionLabelStyle}>{t('set.downloads')}</div>
+        <div className={sectionLabel}>{t('set.downloads')}</div>
 
-        <div style={cardStyle}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 8 }}>{t('set.defaultFolder')}</div>
+        <div className={card}>
+          <div className="text-[12px] text-muted mb-[8px]">{t('set.defaultFolder')}</div>
           <button
             onClick={handlePickFolder}
-            className="lsv-hover-accent"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-              background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
-              color: outputDir ? 'var(--text-soft)' : 'var(--text-dim)', transition: 'all .15s',
-            }}
+            className={`lsv-hover-accent flex items-center gap-[8px] w-full bg-transparent border-0 p-[0px] cursor-pointer [transition:all_.15s] ${outputDir ? 'text-fg-soft' : 'text-dim'}`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0"
+            >
               <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
             </svg>
-            <span style={{ fontSize: '12.5px', fontFamily: "'JetBrains Mono', monospace", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', direction: 'rtl', textAlign: 'left' }}>
-              {outputDir || t('opt.chooseFolder')}
+            <span className="text-[12.5px] font-mono whitespace-nowrap overflow-hidden text-ellipsis [direction:rtl] text-left">
+              <bdi>{outputDir || t('opt.chooseFolder')}</bdi>
             </span>
           </button>
         </div>
 
-        <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className={`${card} flex items-center justify-between`}>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-soft)' }}>{t('set.notify')}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: 2 }}>{t('set.notifySub')}</div>
+            <div className="text-[13px] font-[600] text-fg-soft">{t('set.notify')}</div>
+            <div className="text-[11px] text-dim mt-[2px]">{t('set.notifySub')}</div>
           </div>
           <button
             onClick={() => {
@@ -248,24 +247,19 @@ export function SettingsSheet({
             role="switch"
             aria-checked={notif}
             aria-label={t('set.notifyAria')}
-            style={{
-              width: 42, height: 24, borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: notif ? 'var(--accent)' : 'var(--surface-2)', position: 'relative', transition: 'all .15s', flexShrink: 0,
-            }}
+            className={`w-[42px] h-[24px] rounded-full border-0 cursor-pointer relative [transition:all_.15s] shrink-0 ${notif ? 'bg-accent' : 'bg-surface-2'}`}
           >
-            <span style={{
-              position: 'absolute', top: 3, left: notif ? 21 : 3,
-              width: 18, height: 18, borderRadius: '50%',
-              background: notif ? 'var(--accent-ink)' : 'var(--text-muted)', transition: 'all .15s',
-            }} />
+            <span
+              className={`absolute top-[3px] w-[18px] h-[18px] rounded-full [transition:all_.15s] ${notif ? 'left-[21px] bg-accent-ink' : 'left-[3px] bg-muted'}`}
+            />
           </button>
         </div>
 
         {/* AUTHENTICATION section */}
-        <div style={sectionLabelStyle}>{t('set.auth')}</div>
+        <div className={sectionLabel}>{t('set.auth')}</div>
 
-        <div style={cardStyle}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 9 }}>{t('set.authSub')}</div>
+        <div className={card}>
+          <div className="text-[12px] text-muted mb-[9px]">{t('set.authSub')}</div>
           <BrowserCookieSelector
             value={cookiesBrowser}
             onChange={onCookiesBrowserChange}
@@ -274,31 +268,23 @@ export function SettingsSheet({
         </div>
 
         {/* LANGUAGE section */}
-        <div style={sectionLabelStyle}>{t('set.language')}</div>
+        <div className={sectionLabel}>{t('set.language')}</div>
 
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {([
-              { value: 'en', label: 'English' },
-              { value: 'fr', label: 'Français' },
-            ] as { value: Lang; label: string }[]).map((opt) => {
+        <div className={card}>
+          <div className="flex gap-[6px]">
+            {(
+              [
+                { value: 'en', label: 'English' },
+                { value: 'fr', label: 'Français' },
+              ] as { value: Lang; label: string }[]
+            ).map((opt) => {
               const active = lang === opt.value;
               return (
                 <button
                   key={opt.value}
                   onClick={() => setLang(opt.value)}
                   aria-pressed={active}
-                  style={{
-                    padding: '5px 11px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontSize: '12.5px',
-                    fontWeight: 600,
-                    background: active ? 'var(--accent)' : 'var(--surface-2)',
-                    color: active ? 'var(--accent-ink)' : 'var(--text-chip)',
-                    border: active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.10)',
-                    transition: 'all .15s',
-                  }}
+                  className={`[padding:5px_11px] rounded-[8px] cursor-pointer text-[12.5px] font-[600] [transition:all_.15s] ${active ? 'bg-accent text-accent-ink border border-transparent' : 'bg-surface-2 text-chip border border-[rgba(255,255,255,0.10)]'}`}
                 >
                   {opt.label}
                 </button>
@@ -308,29 +294,36 @@ export function SettingsSheet({
         </div>
 
         {/* ABOUT section */}
-        <div style={sectionLabelStyle}>{t('set.about')}</div>
+        <div className={sectionLabel}>{t('set.about')}</div>
 
-        <div style={cardStyle}>
+        <div className={card}>
           {/* App identity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9, background: 'var(--accent)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-ink)', flexShrink: 0,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" />
+          <div className="flex items-center gap-[10px] mb-[12px]">
+            <div className="w-[32px] h-[32px] rounded-[9px] bg-accent flex items-center justify-center text-accent-ink shrink-0">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <path d="M12 4v11" />
+                <path d="M7 11l5 5 5-5" />
+                <path d="M5 20h14" />
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-strong)' }}>light-scrap-vidz</div>
-              <div style={{ fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-dim)', marginTop: 1 }}>
+              <div className="text-[13px] font-[700] text-fg-strong">light-scrap-vidz</div>
+              <div className="text-[11.5px] font-mono text-dim mt-[1px]">
                 {version ? `v${version}` : '…'}
               </div>
             </div>
           </div>
 
           {/* Separator */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 12 }} />
+          <div className="h-[1px] bg-[rgba(255,255,255,0.06)] mb-[12px]" />
 
           {/* Update button */}
           <button
@@ -339,65 +332,85 @@ export function SettingsSheet({
               void (updateState === 'available' ? handleInstallUpdate() : handleCheckUpdate());
             }}
             disabled={isUpdating}
-            className="lsv-hover-outline"
-            style={{
-              width: '100%',
-              height: 38,
-              borderRadius: 9,
-              border: `1px solid ${updateState === 'up-to-date' ? 'rgba(201,242,94,0.25)' : updateState === 'error' ? 'rgba(255,138,138,0.25)' : 'rgba(255,255,255,0.10)'}`,
-              background: isUpdating ? 'rgba(201,242,94,0.06)' : 'var(--surface-2)',
-              color: updateState === 'up-to-date' ? 'var(--accent)' : updateState === 'error' ? 'var(--danger)' : 'var(--text-soft)',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: isUpdating ? 'default' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              transition: 'all .15s',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
+            className={`lsv-hover-outline w-full h-[38px] rounded-[9px] text-[13px] font-[600] flex items-center justify-center gap-[8px] [transition:all_.15s] relative overflow-hidden ${`border ${updateState === 'up-to-date' ? 'border-[rgba(201,242,94,0.25)] text-accent' : updateState === 'error' ? 'border-[rgba(255,138,138,0.25)] text-danger' : 'border-[rgba(255,255,255,0.10)] text-fg-soft'} ${isUpdating ? 'bg-[rgba(201,242,94,0.06)] cursor-default' : 'bg-surface-2 cursor-pointer'}`}`}
           >
             {/* Download progress bar */}
             {updateState === 'downloading' && downloadProgress > 0 && (
-              <div style={{
-                position: 'absolute', left: 0, top: 0, height: '100%',
-                width: `${downloadProgress}%`,
-                background: 'rgba(201,242,94,0.12)',
-                transition: 'width 0.3s',
-              }} />
+              <div
+                className="absolute left-0 top-0 h-full bg-[rgba(201,242,94,0.12)] [transition:width_0.3s]"
+                style={{ width: `${downloadProgress}%` }}
+              />
             )}
 
             {isUpdating ? (
               <Spinner size={14} thickness={2} />
             ) : updateState === 'up-to-date' ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
             )}
-            <span style={{ position: 'relative' }}>{updateLabel()}</span>
+            <span className="relative">{updateLabel()}</span>
           </button>
 
           {/* yt-dlp status */}
           {ytdlpStatus !== 'idle' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              {ytdlpStatus === 'updating' && (
-                <Spinner size={10} thickness={1.5} />
-              )}
+            <div className="flex items-center gap-[6px] mt-[8px]">
+              {ytdlpStatus === 'updating' && <Spinner size={10} thickness={1.5} />}
               {ytdlpStatus === 'updated' && (
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C9F25E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#C9F25E"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
               )}
               {ytdlpStatus === 'failed' && (
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF8A8A" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#FF8A8A"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
               )}
-              <span style={{ fontSize: '11px', color: ytdlpStatus === 'failed' ? 'var(--danger)' : 'var(--text-dim)' }}>
+              <span
+                className={`text-[11px] ${ytdlpStatus === 'failed' ? 'text-danger' : 'text-dim'}`}
+              >
                 {ytdlpStatus === 'updating' && t('ytdlp.updating')}
                 {ytdlpStatus === 'updated' && t('ytdlp.updated')}
                 {ytdlpStatus === 'failed' && t('ytdlp.failed')}
@@ -407,9 +420,7 @@ export function SettingsSheet({
 
           {/* Error message */}
           {updateState === 'error' && updateError && (
-            <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: 8, lineHeight: 1.4 }}>
-              {updateError}
-            </div>
+            <div className="text-[11px] text-danger mt-[8px] [line-height:1.4]">{updateError}</div>
           )}
         </div>
       </div>

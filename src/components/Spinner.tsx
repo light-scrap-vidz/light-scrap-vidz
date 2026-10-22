@@ -10,16 +10,13 @@ export function Spinner({ size = 18, thickness = 2.5, tone = 'accent' }: Spinner
   const head = tone === 'ink' ? 'var(--accent-ink)' : 'var(--accent)';
   return (
     <span
-      className="lsv-spin"
+      className="lsv-spin shrink-0 rounded-full inline-block"
       aria-hidden="true"
       style={{
         width: size,
         height: size,
-        flexShrink: 0,
-        borderRadius: '50%',
         border: `${thickness}px solid ${ring}`,
         borderTopColor: head,
-        display: 'inline-block',
       }}
     />
   );

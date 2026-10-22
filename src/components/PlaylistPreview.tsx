@@ -13,7 +13,13 @@ interface PlaylistPreviewProps {
   disabled?: boolean;
 }
 
-export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, disabled }: PlaylistPreviewProps) {
+export function PlaylistPreview({
+  info,
+  url,
+  selectedUrls,
+  onSelectionChange,
+  disabled,
+}: PlaylistPreviewProps) {
   const t = useT();
   const platform = getPlatform(url);
   const count = info.playlist_count ?? (info.entries?.length || null);
@@ -45,87 +51,50 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
   const allSelected = entries.length > 0 && entries.every((e) => selectedSet.has(e.url));
 
   return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 14,
-        overflow: 'hidden',
-      }}
-    >
+    <div className="bg-surface border border-[rgba(255,255,255,0.07)] rounded-[14px] overflow-hidden">
       {/* Header row */}
-      <div style={{ display: 'flex', gap: 15, padding: 15 }}>
+      <div className="flex gap-[15px] p-[15px]">
         {/* Thumbnail placeholder */}
-        <div
-          style={{
-            position: 'relative',
-            flexShrink: 0,
-            width: 100,
-            height: 64,
-            borderRadius: 9,
-            overflow: 'hidden',
-          }}
-        >
+        <div className="relative shrink-0 w-[100px] h-[64px] rounded-[9px] overflow-hidden">
           <ThumbPlaceholder platform={platform} />
         </div>
 
         {/* Info column */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div className="flex-1 min-w-[0px] flex flex-col gap-[7px]">
+          <div className="flex items-center gap-[9px]">
             <PlatformBadge platform={platform} />
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+            <span className="text-[11px] font-[600] [text-transform:uppercase] [letter-spacing:0.04em] text-muted">
               {t('preview.playlist')}
             </span>
           </div>
 
-          <h3
-            style={{
-              margin: 0,
-              fontSize: '14px',
-              fontWeight: 700,
-              color: 'var(--text-strong)',
-              letterSpacing: '-0.01em',
-              lineHeight: 1.25,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
+          <h3 className="m-0 text-[14px] font-[700] text-fg-strong [letter-spacing:-0.01em] [line-height:1.25] [display:-webkit-box] [-webkit--line-clamp:2] [-webkit--box-orient:vertical] overflow-hidden">
             {info.title || t('preview.untitledPlaylist')}
           </h3>
 
-          <div style={{ fontSize: '12px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
-            {[info.uploader, count != null ? t('preview.videos', { count }) : null].filter(Boolean).join(' · ')}
+          <div className="text-[12px] font-mono text-muted">
+            {[info.uploader, count != null ? t('preview.videos', { count }) : null]
+              .filter(Boolean)
+              .join(' · ')}
           </div>
         </div>
       </div>
 
       {/* Entry selection */}
       {entries.length > 0 && (
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 15px 13px' }}>
+        <div className="border-t border-t-[rgba(255,255,255,0.06)] [padding:10px_15px_13px]">
           {/* Row header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)' }}>
+          <div className="flex items-center justify-between mb-[8px]">
+            <span className="text-[11px] font-[700] [text-transform:uppercase] [letter-spacing:0.05em] text-dim">
               {selectedUrls.length > 0
                 ? t('preview.selected', { count: selectedUrls.length })
                 : t('preview.shown', { count: entries.length })}
             </span>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="flex gap-[6px]">
               <button
                 onClick={allSelected ? selectNone : selectAll}
                 disabled={disabled}
-                style={{
-                  padding: '3px 9px',
-                  borderRadius: 6,
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  background: 'transparent',
-                  color: 'var(--text-mid)',
-                  fontSize: '11.5px',
-                  fontWeight: 600,
-                  cursor: disabled ? 'default' : 'pointer',
-                  opacity: disabled ? 0.5 : 1,
-                }}
+                className={`[padding:3px_9px] rounded-[6px] border border-[rgba(255,255,255,0.10)] bg-transparent text-fg-mid text-[11.5px] font-[600] ${disabled ? 'cursor-default opacity-50' : 'cursor-pointer'}`}
               >
                 {allSelected ? t('preview.selectNone') : t('preview.selectAll')}
               </button>
@@ -133,49 +102,25 @@ export function PlaylistPreview({ info, url, selectedUrls, onSelectionChange, di
           </div>
 
           {/* Entry list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 168, overflowY: 'auto' }}>
+          <div className="flex flex-col gap-[1px] max-h-[168px] overflow-y-auto">
             {entries.map((entry, i) => {
               const checked = selectedSet.has(entry.url);
               return (
                 <label
                   key={entry.id || i}
-                  className="lsv-hover-fill"
+                  className={`lsv-hover-fill flex items-center gap-[10px] [padding:5px_8px] rounded-[7px] [transition:background_.1s] ${(disabled ? 'cursor-default' : 'cursor-pointer') + ' ' + (checked ? 'bg-[rgba(201,242,94,0.06)]' : 'bg-transparent')}`}
                   data-checked={checked}
                   data-disabled={!!disabled}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '5px 8px',
-                    borderRadius: 7,
-                    cursor: disabled ? 'default' : 'pointer',
-                    background: checked ? 'rgba(201,242,94,0.06)' : 'transparent',
-                    transition: 'background .1s',
-                  }}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleEntry(entry.url)}
                     disabled={disabled}
-                    style={{
-                      accentColor: 'var(--accent)',
-                      width: 14,
-                      height: 14,
-                      flexShrink: 0,
-                      cursor: disabled ? 'default' : 'pointer',
-                    }}
+                    className={`[accent-color:var(--accent)] w-[14px] h-[14px] shrink-0 ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
                   />
                   <span
-                    style={{
-                      fontSize: '12.5px',
-                      color: checked ? 'var(--text-soft)' : '#9A9490',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      flex: 1,
-                      minWidth: 0,
-                    }}
+                    className={`text-[12.5px] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-[0px] ${checked ? 'text-fg-soft' : 'text-[#9A9490]'}`}
                   >
                     {entry.title || entry.id}
                   </span>

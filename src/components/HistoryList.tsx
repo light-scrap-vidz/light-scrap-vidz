@@ -40,30 +40,21 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
 
   if (entries.length === 0) {
     return (
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--text-faint)',
-          fontSize: '13px',
-        }}
-      >
+      <div className="flex-1 flex items-center justify-center text-faint text-[13px]">
         {t('history.empty')}
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="flex flex-col gap-[8px]">
       {entries.map((entry) => {
         const isPending = pendingId === entry.id && isLoading;
 
         return (
           <div
             key={entry.id}
-            className="lsv-hover-row"
+            className={`lsv-hover-row flex items-center gap-[13px] p-[10px] bg-surface rounded-[12px] [transition:all_.15s] ${`border ${isPending ? 'border-[rgba(201,242,94,0.25)]' : 'border-[rgba(255,255,255,0.05)]'} ${onSelect && !isLoading ? 'cursor-pointer' : isLoading ? 'cursor-wait' : 'cursor-default'} ${isLoading && !isPending ? 'opacity-50' : ''}`}`}
             aria-disabled={!!isLoading}
             role="button"
             tabIndex={0}
@@ -74,70 +65,34 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
                 handleSelect(entry);
               }
             }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 13,
-              padding: 10,
-              background: 'var(--surface)',
-              border: `1px solid ${isPending ? 'rgba(201,242,94,0.25)' : 'rgba(255,255,255,0.05)'}`,
-              borderRadius: 12,
-              transition: 'all .15s',
-              cursor: onSelect && !isLoading ? 'pointer' : isLoading ? 'wait' : 'default',
-              opacity: isLoading && !isPending ? 0.5 : 1,
-            }}
           >
             {/* Thumbnail / spinner */}
-            <div
-              style={{
-                width: 70,
-                height: 44,
-                borderRadius: 9,
-                overflow: 'hidden',
-                flexShrink: 0,
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div className="w-[70px] h-[44px] rounded-[9px] overflow-hidden shrink-0 relative flex items-center justify-center">
               {isPending ? (
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'rgba(201,242,94,0.06)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
+                <div className="w-full h-full bg-[rgba(201,242,94,0.06)] flex items-center justify-center">
                   <Spinner />
                 </div>
               ) : (
-                <Thumb src={entry.thumbnail} alt={entry.title} platform={entry.platform} lazy proxyOnly />
+                <Thumb
+                  src={entry.thumbnail}
+                  alt={entry.title}
+                  platform={entry.platform}
+                  lazy
+                  proxyOnly
+                />
               )}
             </div>
 
             {/* Right column */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="flex-1 min-w-[0px] flex flex-col gap-[4px]">
               <p
-                style={{
-                  margin: 0,
-                  fontSize: '13.5px',
-                  fontWeight: 600,
-                  color: isPending ? 'var(--accent)' : 'var(--text)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  transition: 'color .15s',
-                }}
+                className={`m-0 text-[13.5px] font-[600] whitespace-nowrap overflow-hidden text-ellipsis [transition:color_.15s] ${isPending ? 'text-accent' : 'text-fg'}`}
               >
                 {isPending ? t('history.fetching') : entry.title}
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <div className="flex items-center gap-[8px] min-w-[0px]">
                 <PlatformBadge platform={entry.platform} compact />
-                <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                <span className="text-[11px] text-faint font-mono shrink-0">
                   {timeAgo(entry.downloaded_at, lang)}
                 </span>
               </div>
@@ -145,27 +100,25 @@ export function HistoryList({ entries, onSelect, isLoading }: HistoryListProps) 
 
             {/* Reveal button */}
             <button
-              onClick={(e) => { e.stopPropagation(); void openFolder(entry.filepath); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                void openFolder(entry.filepath);
+              }}
               aria-label={t('history.reveal')}
               title={t('history.reveal')}
               disabled={!!isLoading}
-              className="lsv-hover-accent-bg"
-              style={{
-                width: 30,
-                height: 30,
-                flexShrink: 0,
-                borderRadius: 8,
-                background: 'transparent',
-                border: 'none',
-                cursor: isLoading ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-faint)',
-                transition: 'all .15s',
-              }}
+              className={`lsv-hover-accent-bg w-[30px] h-[30px] shrink-0 rounded-[8px] bg-transparent border-0 flex items-center justify-center text-faint [transition:all_.15s] ${isLoading ? 'cursor-default' : 'cursor-pointer'}`}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
               </svg>
             </button>

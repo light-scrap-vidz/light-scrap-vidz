@@ -15,75 +15,31 @@ export function VideoPreview({ info, url }: VideoPreviewProps) {
   const platform = getPlatform(url);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 15,
-        padding: 15,
-        background: 'var(--surface)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 14,
-      }}
-    >
+    <div className="flex gap-[15px] p-[15px] bg-surface border border-[rgba(255,255,255,0.07)] rounded-[14px]">
       {/* Thumbnail */}
-      <div
-        style={{
-          position: 'relative',
-          flexShrink: 0,
-          width: 124,
-          height: 78,
-          borderRadius: 9,
-          overflow: 'hidden',
-        }}
-      >
+      <div className="relative shrink-0 w-[124px] h-[78px] rounded-[9px] overflow-hidden">
         <Thumb src={info.thumbnail} alt={info.title} platform={platform} />
         {info.duration > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              bottom: 5,
-              right: 5,
-              background: 'rgba(0,0,0,0.72)',
-              color: 'var(--text-strong)',
-              fontSize: '9.5px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 500,
-              padding: '1px 5px',
-              borderRadius: 5,
-            }}
-          >
+          <span className="absolute bottom-[5px] right-[5px] bg-[rgba(0,0,0,0.72)] text-fg-strong text-[9.5px] font-mono font-[500] [padding:1px_5px] rounded-[5px]">
             {formatDuration(info.duration)}
           </span>
         )}
       </div>
 
       {/* Right column */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div className="flex-1 min-w-[0px] flex flex-col gap-[7px]">
+        <div className="flex items-center gap-[9px]">
           <PlatformBadge platform={platform} />
-          <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+          <span className="text-[11px] font-[600] [text-transform:uppercase] [letter-spacing:0.04em] text-muted">
             {t('preview.single')}
           </span>
         </div>
 
-        <h3
-          style={{
-            margin: 0,
-            fontSize: '15.5px',
-            fontWeight: 700,
-            color: 'var(--text-strong)',
-            letterSpacing: '-0.01em',
-            lineHeight: 1.25,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
+        <h3 className="m-0 text-[15.5px] font-[700] text-fg-strong [letter-spacing:-0.01em] [line-height:1.25] [display:-webkit-box] [-webkit--line-clamp:2] [-webkit--box-orient:vertical] overflow-hidden">
           {info.title}
         </h3>
 
-        <div style={{ fontSize: '12.5px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+        <div className="text-[12.5px] font-mono text-muted">
           {[info.uploader, info.duration > 0 ? formatDuration(info.duration) : null]
             .filter(Boolean)
             .join(' · ')}

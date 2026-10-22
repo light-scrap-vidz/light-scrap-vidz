@@ -73,7 +73,8 @@ describe('the desktop app', () => {
     await submit('https://www.youtube.com/watch?v=fake1');
     const title = await browser.$('h3');
     await title.waitForDisplayed({ timeout: 30_000 });
-    assert.equal(await title.getText(), 'Fake clip');
+    // `getText()` is empty for line-clamped text in WebKitGTK; read the DOM instead.
+    assert.equal(await title.getProperty('textContent'), 'Fake clip');
   });
 
   it('downloads a video and writes the file', async () => {

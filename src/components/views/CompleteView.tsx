@@ -6,20 +6,8 @@ import { formatDuration } from '@/lib/utils';
 import { useT } from '@/lib/locale';
 import type { Flow } from '@/hooks/useAppFlow';
 
-const ghostButton: React.CSSProperties = {
-  width: 48,
-  height: 48,
-  padding: 0,
-  borderRadius: 12,
-  background: 'var(--surface-2)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  color: 'var(--text-soft)',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all .15s',
-};
+const ghostButton =
+  'lsv-hover-outline w-12 h-12 p-0 rounded-xl bg-surface-2 border border-[rgba(255,255,255,0.10)] text-fg-soft cursor-pointer flex items-center justify-center transition-all duration-150';
 
 export function CompleteView({ flow }: { flow: Flow }) {
   const t = useT();
@@ -36,39 +24,57 @@ export function CompleteView({ flow }: { flow: Flow }) {
         .join(' · ');
 
   return (
-    <div className="lsv-view" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-      <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-soft)', border: '1px solid rgba(201,242,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <div className="lsv-view flex-1 flex flex-col items-center justify-center gap-[16px]">
+      <div className="w-[56px] h-[56px] rounded-full bg-[var(--accent-soft)] border border-[rgba(201,242,94,0.3)] flex items-center justify-center text-accent">
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M20 6L9 17l-5-5" />
         </svg>
       </div>
 
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.01em' }}>{t('dl.complete')}</div>
+      <div className="text-center">
+        <div className="text-[17px] font-[700] text-fg-strong [letter-spacing:-0.01em]">
+          {t('dl.complete')}
+        </div>
         {completedPath && (
-          <div style={{ fontSize: '11.5px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-dim)', marginTop: 5, maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'rtl', userSelect: 'text' }}>
-            {completedPath}
+          <div className="text-[11.5px] font-mono text-dim mt-[5px] max-w-[420px] overflow-hidden text-ellipsis whitespace-nowrap [direction:rtl] select-text">
+            <bdi>{completedPath}</bdi>
           </div>
         )}
       </div>
 
-      <div style={{ width: '100%', maxWidth: 420, background: 'var(--surface)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 16, padding: '13px 15px', alignItems: 'center' }}>
-        <div style={{ width: 56, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-          {thumb ? <Thumb src={thumb} alt={title} platform={platform} /> : <ThumbPlaceholder platform={platform} />}
+      <div className="w-full max-w-[420px] bg-surface rounded-[14px] border border-[rgba(255,255,255,0.07)] flex gap-[16px] [padding:13px_15px] items-center">
+        <div className="w-[56px] h-[36px] rounded-[8px] overflow-hidden shrink-0">
+          {thumb ? (
+            <Thumb src={thumb} alt={title} platform={platform} />
+          ) : (
+            <ThumbPlaceholder platform={platform} />
+          )}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+        <div className="flex-1 min-w-[0px]">
+          <div className="text-[13.5px] font-[600] text-fg whitespace-nowrap overflow-hidden text-ellipsis">
+            {title}
+          </div>
           {meta && (
-            <div style={{ fontSize: '12px', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{meta}</div>
+            <div className="text-[12px] font-mono text-muted mt-[2px] whitespace-nowrap overflow-hidden text-ellipsis">
+              {meta}
+            </div>
           )}
         </div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 420, display: 'flex', gap: 9 }}>
+      <div className="w-full max-w-[420px] flex gap-[9px]">
         <button
           onClick={() => completedPath && void openFile(completedPath)}
-          className="lsv-hover-outline"
-          style={ghostButton}
+          className={ghostButton}
           aria-label={t('dl.openFile')}
           title={t('dl.openFile')}
         >
@@ -78,19 +84,26 @@ export function CompleteView({ flow }: { flow: Flow }) {
         </button>
         <button
           onClick={() => completedPath && void openFolder(completedPath)}
-          className="lsv-hover-outline"
-          style={ghostButton}
+          className={ghostButton}
           aria-label={t('dl.reveal')}
           title={t('dl.reveal')}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
           </svg>
         </button>
         <button
           onClick={flow.handleReset}
-          className="lsv-hover-lift"
-          style={{ flex: 1, height: 48, borderRadius: 12, border: 'none', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 28px rgba(201,242,94,0.32)' }}
+          className="lsv-hover-lift flex-1 h-[48px] rounded-[12px] border-0 bg-accent text-accent-ink text-[13.5px] font-[700] cursor-pointer [box-shadow:0_10px_28px_rgba(201,242,94,0.32)]"
         >
           {t('dl.another')}
         </button>

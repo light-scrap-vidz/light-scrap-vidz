@@ -9,19 +9,21 @@ import { DownloadButton } from '@/components/DownloadButton';
 import { useT } from '@/lib/locale';
 import type { Flow } from '@/hooks/useAppFlow';
 
-const optionRow: React.CSSProperties = { padding: '14px 15px' };
-const separator: React.CSSProperties = { height: 1, background: 'rgba(255,255,255,0.06)' };
+const optionRow = 'p-[14px_15px]';
+const separator = 'h-px bg-[rgba(255,255,255,0.06)]';
 
 export function FetchedView({ flow }: { flow: Flow }) {
   const t = useT();
   const { info, plInfo, isPlaylist, isBusy, selectedPlaylistUrls, dl } = flow;
 
   return (
-    <div className="lsv-view" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'auto', paddingBottom: 22 }}>
+    <div className="lsv-view flex-1 flex flex-col gap-[14px] overflow-auto [padding-bottom:22px]">
       <UrlInput onSubmit={flow.handleFetchInfo} isLoading={flow.isFetching} showTryChips={false} />
-      {flow.fetchError && <div style={{ fontSize: '11.5px', color: 'var(--danger)', userSelect: 'text' }}>{t(flow.fetchError)}</div>}
+      {flow.fetchError && (
+        <div className="text-[11.5px] text-danger select-text">{t(flow.fetchError)}</div>
+      )}
       {dl.status === 'error' && dl.error && (
-        <div role="alert" style={{ fontSize: '12px', color: 'var(--danger)', userSelect: 'text' }}>
+        <div role="alert" className="text-[12px] text-danger select-text">
           {t(dl.error)}
         </div>
       )}
@@ -37,8 +39,8 @@ export function FetchedView({ flow }: { flow: Flow }) {
         />
       )}
 
-      <div style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, overflow: 'hidden' }}>
-        <div style={optionRow}>
+      <div className="bg-surface border border-[rgba(255,255,255,0.07)] rounded-[14px] overflow-hidden">
+        <div className={optionRow}>
           <FormatSelector
             audioOnly={flow.audioOnly}
             onAudioOnlyChange={flow.setAudioOnly}
@@ -47,12 +49,12 @@ export function FetchedView({ flow }: { flow: Flow }) {
             disabled={isBusy}
           />
         </div>
-        <div style={separator} />
-        <div style={optionRow}>
+        <div className={separator} />
+        <div className={optionRow}>
           <FolderPicker value={flow.outputDir} onChange={flow.setOutputDir} disabled={isBusy} />
         </div>
-        <div style={separator} />
-        <div style={optionRow}>
+        <div className={separator} />
+        <div className={optionRow}>
           <BrowserCookieSelector
             value={flow.cookiesBrowser}
             onChange={flow.setCookiesBrowser}
@@ -62,9 +64,13 @@ export function FetchedView({ flow }: { flow: Flow }) {
         </div>
         {isPlaylist && selectedPlaylistUrls.length === 0 && (
           <>
-            <div style={separator} />
-            <div style={optionRow}>
-              <PlaylistEndSelector value={flow.playlistEnd} onChange={flow.setPlaylistEnd} disabled={isBusy} />
+            <div className={separator} />
+            <div className={optionRow}>
+              <PlaylistEndSelector
+                value={flow.playlistEnd}
+                onChange={flow.setPlaylistEnd}
+                disabled={isBusy}
+              />
             </div>
           </>
         )}

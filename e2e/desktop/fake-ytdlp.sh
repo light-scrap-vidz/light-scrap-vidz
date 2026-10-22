@@ -29,6 +29,7 @@ case "$mode" in
         exit 1
         ;;
     esac
+    mkdir -p "$dir"   # like yt-dlp, which creates the output folder
     file="$dir/Fake clip [fake1].mp4"
     echo "[download] Destination: $file"
     echo "[download]  10.0% of   10.00MiB at    1.00MiB/s ETA 00:09"

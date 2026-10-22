@@ -197,7 +197,7 @@ describe('DownloadButton', () => {
     fireEvent.click(button);
 
     expect(onDownload).not.toHaveBeenCalled();
-    expect(button).toHaveStyle({ opacity: '0.5' });
+    expect(button).toHaveClass('opacity-50');
   });
 
   it('stays still on hover while disabled', () => {

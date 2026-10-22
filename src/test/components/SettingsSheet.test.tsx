@@ -81,7 +81,7 @@ describe('SettingsSheet — visibility', () => {
 
   it('closes when the overlay is clicked', async () => {
     const { onClose, container } = setup();
-    const overlay = container.querySelector('div[style*="rgba(0, 0, 0, 0.55)"]');
+    const overlay = container.querySelector('div.inset-0');
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalled();
     await waitFor(() => expect(mockGetVersion).toHaveBeenCalled());

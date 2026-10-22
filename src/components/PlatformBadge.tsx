@@ -6,21 +6,14 @@ export function PlatformBadge({ platform, compact }: { platform: Platform; compa
   const tint = PLATFORM_TINT[platform] ?? PLATFORM_TINT.unknown;
   return (
     <span
+      className={`inline-flex items-center rounded-full text-[10px] font-[700] shrink-0 ${compact ? 'gap-1 p-[1px_7px]' : 'gap-[5px] p-[2px_8px]'}`}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: compact ? 4 : 5,
-        padding: compact ? '1px 7px' : '2px 8px',
-        borderRadius: 999,
-        fontSize: '10px',
-        fontWeight: 700,
         color: meta.color,
         background: meta.bgColor,
         border: `1px solid ${meta.borderColor}`,
-        flexShrink: 0,
       }}
     >
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: tint }} />
+      <span className="w-[5px] h-[5px] rounded-full" style={{ background: tint }} />
       {meta.label}
     </span>
   );

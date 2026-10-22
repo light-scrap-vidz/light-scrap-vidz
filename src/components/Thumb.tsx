@@ -45,7 +45,7 @@ export function Thumb({ src, alt, platform, lazy, proxyOnly }: ThumbProps) {
       src={shown}
       alt={alt}
       loading={lazy ? 'lazy' : undefined}
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      className="w-full h-full [object-fit:cover]"
       onError={() => setFailed(true)}
     />
   );

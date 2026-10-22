@@ -26,20 +26,11 @@ export function FormatSelector({
   const t = useT();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+    <div className="flex flex-col gap-[13px]">
       {/* Format row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-mid)' }}>{t('opt.format')}</span>
-        <div
-          style={{
-            display: 'flex',
-            gap: 3,
-            padding: 3,
-            background: 'var(--surface-2)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 10,
-          }}
-        >
+      <div className="flex items-center justify-between gap-[12px]">
+        <span className="text-[13px] font-[600] text-fg-mid">{t('opt.format')}</span>
+        <div className="flex gap-[3px] p-[3px] bg-surface-2 border border-[rgba(255,255,255,0.07)] rounded-[10px]">
           {[
             { v: false, label: t('opt.video') },
             { v: true, label: t('opt.audio') },
@@ -51,18 +42,7 @@ export function FormatSelector({
                 onClick={() => onAudioOnlyChange(seg.v)}
                 aria-pressed={active}
                 disabled={disabled}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  cursor: disabled ? 'default' : 'pointer',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
-                  background: active ? 'var(--accent)' : 'transparent',
-                  color: active ? 'var(--accent-ink)' : '#9C968C',
-                  boxShadow: active ? '0 2px 8px rgba(201,242,94,0.25)' : 'none',
-                  transition: 'all .15s',
-                }}
+                className={`[padding:6px_14px] rounded-[8px] border-0 text-[12.5px] font-[600] [transition:all_.15s] ${(disabled ? 'cursor-default' : 'cursor-pointer') + ' ' + (active ? 'bg-accent text-accent-ink [box-shadow:0_2px_8px_rgba(201,242,94,0.25)]' : 'bg-transparent text-[#9C968C] shadow-none')}`}
               >
                 {seg.label}
               </button>
@@ -74,10 +54,10 @@ export function FormatSelector({
       {/* Quality row */}
       {!audioOnly && (
         <>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-mid)' }}>{t('opt.quality')}</span>
-            <div style={{ display: 'flex', gap: 6 }}>
+          <div className="h-[1px] bg-[rgba(255,255,255,0.06)]" />
+          <div className="flex items-center justify-between gap-[12px]">
+            <span className="text-[13px] font-[600] text-fg-mid">{t('opt.quality')}</span>
+            <div className="flex gap-[6px]">
               {QUALITIES.map((q) => {
                 const active = quality === q.value;
                 return (
@@ -86,17 +66,7 @@ export function FormatSelector({
                     onClick={() => onQualityChange(q.value)}
                     aria-pressed={active}
                     disabled={disabled}
-                    style={{
-                      padding: '5px 11px',
-                      borderRadius: 8,
-                      cursor: disabled ? 'default' : 'pointer',
-                      fontSize: '12.5px',
-                      fontWeight: 600,
-                      background: active ? 'var(--accent)' : 'var(--surface-2)',
-                      color: active ? 'var(--accent-ink)' : 'var(--text-chip)',
-                      border: active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.10)',
-                      transition: 'all .15s',
-                    }}
+                    className={`[padding:5px_11px] rounded-[8px] text-[12.5px] font-[600] [transition:all_.15s] ${(disabled ? 'cursor-default' : 'cursor-pointer') + ' ' + (active ? 'bg-accent text-accent-ink border border-transparent' : 'bg-surface-2 text-chip border border-[rgba(255,255,255,0.10)]')}`}
                   >
                     {q.labelKey ? t(q.labelKey) : q.value}
                   </button>
