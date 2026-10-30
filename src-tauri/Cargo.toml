@@ -1,0 +1,60 @@
+[package]
+name = "light-scrap-vidz"
+version = "1.0.0"
+authors = ["Sikander RAVATE <r.sik@hotmail.fr>"]
+license = "MIT"
+repository = "https://github.com/light-scrap-vidz/light-scrap-vidz"
+edition = "2021"
+
+[lib]
+name = "light_scrap_vidz_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "light-scrap-vidz"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2" }
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-clipboard-manager = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "process", "io-util", "sync", "time", "rt-multi-thread", "fs", "net"] }
+regex = "1"
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "system-proxy"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+url = "2"
+percent-encoding = "2"
+sha2 = "0.11"
+ts-rs = "12"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+# unit tests via cargo test
+tempfile = "3"
+# `tauri::test::mock_app()` : permet d'exécuter les commandes qui prennent un `State`
+# sans lancer de fenêtre.
+tauri = { version = "2", features = ["test"] }
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"

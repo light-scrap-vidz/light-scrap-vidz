@@ -1,0 +1,13 @@
+pub mod dependencies;
+pub mod detect_browsers;
+pub mod download;
+pub mod download_runner;
+pub mod fetch_info;
+pub mod fetch_playlist_info;
+pub mod fetch_slots;
+pub mod open_file;
+pub mod open_folder;
+pub mod release_notes;
+pub mod thumb_cache;
+pub mod thumb_protocol;
+pub mod update_ytdlp;

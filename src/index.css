@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-app: var(--bg-primary);
+  --color-surface: var(--bg-secondary);
+  --color-surface-2: var(--bg-tertiary);
+  --color-surface-3: var(--bg-hover);
+  --color-card: var(--bg-card);
+  --color-border: var(--border);
+  --color-fg: var(--text-primary);
+  --color-fg-strong: var(--text-primary);
+  --color-fg-soft: var(--text-soft);
+  --color-fg-mid: var(--text-soft);
+  --color-muted: var(--text-secondary);
+  --color-dim: var(--text-secondary);
+  --color-faint: var(--text-secondary);
+  --color-chip: var(--text-soft);
+  --color-hover: var(--text-secondary);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+}
+
+
+/* This app's own primary colour; everything else comes from the suite (suite/suite.css). */
+:root,
+:root[data-theme='dark'] {
+  --accent: #C9F25E;
+  --accent-hover: #D6F77D;
+  --accent-ink: #ffffff;
+}
+:root[data-theme='light'] {
+  --accent: #55770a;
+  --accent-hover: #456209;
+  --accent-ink: #ffffff;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --accent: #55770a;
+    --accent-hover: #456209;
+    --accent-ink: #ffffff;
+  }
+}
+
+/* The colours, the font and the base size are the suite's (suite/suite.css). */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+body { overflow: hidden; }
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+@keyframes lsv-spin { to { transform: rotate(360deg); } }
+@keyframes lsv-fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.lsv-spin { animation: lsv-spin 0.8s linear infinite; }
+/* Bar of a step with no measurable progress (merging, unknown size). */
+@keyframes lsv-indeterminate { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+.lsv-indeterminate { animation: lsv-indeterminate 1.4s ease-in-out infinite; }
+
+/* Hover feedback. `!important` lets these win over the inline base colours. */
+button, [role="button"] { font-family: inherit; }
+.lsv-hover-icon:hover:not(:disabled) { background: var(--bg-tertiary) !important; color: var(--text-soft) !important; }
+.lsv-hover-link:hover { color: var(--text-soft) !important; }
+.lsv-hover-lift { transition: transform .15s, filter .15s; }
+.lsv-hover-lift:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
+.lsv-hover-outline:hover:not(:disabled) { border-color: color-mix(in srgb, var(--text-primary) 20%, transparent) !important; }
+.lsv-hover-danger:hover:not(:disabled) { color: var(--danger) !important; border-color: color-mix(in srgb, var(--danger) 30%, transparent) !important; }
+.lsv-hover-row:hover:not([aria-disabled="true"]) { border-color: color-mix(in srgb, var(--text-primary) 12%, transparent) !important; }
+.lsv-hover-accent:hover:not(:disabled) { color: var(--accent) !important; }
+.lsv-hover-accent-bg:hover:not(:disabled) { color: var(--accent) !important; background: color-mix(in srgb, var(--text-primary) 5%, transparent) !important; }
+.lsv-hover-muted:hover { color: var(--text-soft) !important; }
+.lsv-hover-fill:hover:not([data-checked="true"]):not([data-disabled="true"]) { background: color-mix(in srgb, var(--text-primary) 4%, transparent) !important; }
+
+button:focus-visible, [role="button"]:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lsv-spin { animation-duration: 2s; }
+  .lsv-indeterminate { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}
+.lsv-view { animation: lsv-fade 0.15s ease; }
+.lsv-field:focus, .lsv-field:focus-within { border-color: var(--accent) !important; }
+/* The field's own border already shows the focus: no second outline inside it. */
+.lsv-field input:focus-visible, .lsv-field textarea:focus-visible { outline: none; }
