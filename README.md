@@ -76,14 +76,6 @@ chmod +x LightScrapVidz_*_amd64.AppImage
 
 ---
 
-## Mobile
-
-An Android and iOS client is available in
-[light-scrap-vidz-mobile](https://github.com/light-scrap-vidz/light-scrap-vidz-mobile) — a thin
-Expo app talking to a small self-hosted server that reuses this project's download logic.
-
----
-
 ## Uninstall
 
 **macOS — Homebrew**
