@@ -1,6 +1,6 @@
 [package]
 name = "light-scrap-vidz"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Sikander RAVATE <r.sik@hotmail.fr>"]
 license = "MIT"
 repository = "https://github.com/light-scrap-vidz/light-scrap-vidz"
