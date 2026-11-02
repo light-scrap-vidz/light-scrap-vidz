@@ -59,7 +59,7 @@ test('an available update is offered in a banner at start-up, then installs it a
   await expect(app.getByText('Version 9.9.9 is available.')).toBeVisible({ timeout: 10_000 });
   expect(await calls(app, 'plugin:updater|download_and_install')).toEqual([]);
 
-  await app.getByRole('button', { name: 'Update now' }).click();
+  await app.getByRole('button', { name: 'Update and restart' }).click();
   await expect.poll(() => calls(app, 'plugin:process|restart')).toHaveLength(1);
   expect(await calls(app, 'plugin:updater|download_and_install')).toHaveLength(1);
 });
